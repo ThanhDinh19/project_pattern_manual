@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pattern Manual</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>Pattern Manual</h1>
+        <!-- <p>Quản lý Excel, folder và tìm ảnh</p> -->
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-btn active" id="navExcelBtn" data-target="uploadCard">
+          Import Excel
+        </button>
+
+        <button class="sidebar-nav-btn" id="navFolderBtn" data-target="folderCard" disabled>
+          Import Folder
+        </button>
+
+        <button class="sidebar-nav-btn" id="navImageBtn" data-target="imageSearchCard" disabled>
+          Tìm theo ảnh
+        </button>
+
+        <button class="sidebar-nav-btn" id="navDataBtn" data-target="dataCard" disabled>
+          Dữ liệu Excel
+        </button>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <h2 class="page-title">
+            <img src="{{ url_for('static', filename='images/user-manual-icon-flat-style-vector.jpg') }}" alt="" class="header-image" />
+          </h2>
+          <!-- <p>Import Excel, map folder theo Style No và tìm hàng gần giống bằng ảnh.</p> -->
+        </div>
+      </header>
+
+      <!-- <section class="card summary-card hidden" id="summaryCard">
+        <h3>Thông tin tổng quan</h3>
+        <div id="summaryContent" class="summary-grid"></div>
+      </section> -->
+
+      <section class="card feature-panel" id="uploadCard">
+        <h3>1. Import file Excel</h3>
+        <form id="excelUploadForm" class="upload-form">
+          <input id="excelFile" name="file" type="file" accept=".xlsx,.xlsm" required />
+          <button type="submit">Tải file Excel</button>
+        </form>
+        <p id="uploadResult" class="status-text">Chưa có dữ liệu</p>
+      </section>
+
+      <section class="card feature-panel hidden panel-collapsed" id="folderCard">
+        <h3>2. Import folder Pattern Manual</h3>
+        <form id="folderImportForm" class="upload-form">
+          <input id="folderInput" type="file" webkitdirectory directory multiple />
+          <button type="submit">Tải folder lên</button>
+        </form>
+        <p id="folderResult" class="status-text">Chưa import folder</p>
+      </section>
+
+      <section class="card feature-panel hidden panel-collapsed" id="imageSearchCard">
+        <h3>3. Tìm theo ảnh dán từ clipboard</h3>
+
+        <div id="pasteZone" class="paste-zone" tabindex="0">
+          <p class="paste-title">Bấm vào đây rồi nhấn Ctrl + V / Cmd + V</p>
+          <img id="pastedPreview" class="pasted-preview hidden" alt="Ảnh vừa dán" />
+        </div>
+
+        <p id="searchStatus" class="status-text">Chưa dán ảnh</p>
+        <div id="matchResults" class="match-results"></div>
+      </section>
+
+      <section class="card feature-panel hidden panel-collapsed" id="dataCard">
+        <div class="panel-header">
+          <div>
+            <h3>4. Dữ liệu Excel</h3>
+          </div>
+
+          <button type="button" id="resetDataBtn" class="danger-btn">
+            Reset toàn bộ
+          </button>
+        </div>
+
+        <div id="sheetTabs" class="sheet-tabs"></div>
+        <div id="excelDataContainer"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>
