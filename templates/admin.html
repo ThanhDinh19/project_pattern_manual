@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Pattern Manual</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #0f172a;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn,
+        .btn-danger {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        input {
+            width: 100%;
+            height: 42px;
+            border: 1px solid #d8dee8;
+            border-radius: 10px;
+            padding: 0 12px;
+            box-sizing: border-box;
+        }
+
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        label.checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            background: white;
+        }
+
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            vertical-align: top;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        .status {
+            margin-top: 10px;
+            color: #475569;
+            min-height: 20px;
+        }
+
+        .small-input {
+            height: 34px;
+        }
+
+        .admin-create-card {
+            padding: 24px 26px;
+        }
+
+        .admin-create-card h2 {
+            margin: 0 0 18px;
+            font-size: 24px;
+        }
+
+        .create-user-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 48px;
+            border: 1px solid #dbe2ea;
+            border-radius: 14px;
+            padding: 0 14px;
+            box-sizing: border-box;
+            font-size: 15px;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .permission-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        .permission-box-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 14px;
+        }
+
+        .permission-grid-clean {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(180px, 1fr));
+            gap: 12px 16px;
+        }
+
+        .perm-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 48px;
+            padding: 10px 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            color: #1e293b;
+            transition: 0.2s ease;
+        }
+
+        .perm-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .perm-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        .perm-item span {
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .form-actions .btn {
+            min-width: 160px;
+            height: 46px;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 1100px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .permission-grid-clean {
+                grid-template-columns: repeat(2, minmax(180px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .permission-grid-clean {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .users-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            background: white;
+            table-layout: fixed;
+        }
+
+        .users-table th,
+        .users-table td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            vertical-align: top;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .users-table th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .users-table tbody tr:hover {
+            background: #fafcff;
+        }
+
+        .cell-email {
+            width: 160px;
+        }
+
+        .cell-name {
+            width: 180px;
+        }
+
+        .cell-status {
+            width: 130px;
+        }
+
+        .cell-permissions {
+            width: 280px;
+        }
+
+        .cell-password {
+            width: 260px;
+        }
+
+        .cell-save {
+            width: 120px;
+        }
+
+        .user-email {
+            font-weight: 600;
+            color: #0f172a;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .compact-input {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #d8dee8;
+            border-radius: 10px;
+            padding: 0 10px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .compact-check-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .status-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .permission-grid-compact {
+            grid-template-columns: repeat(2, minmax(100px, 1fr));
+        }
+
+        .mini-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 34px;
+            padding: 6px 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 13px;
+            line-height: 1.2;
+        }
+
+        .mini-check input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        .mini-check span {
+            color: #1f2937;
+        }
+
+        .password-action-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-small {
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell-save .btn-small {
+            width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            .users-table {
+                min-width: 980px;
+            }
+        }
+
+
+        .users-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            background: #fff;
+            table-layout: fixed;
+        }
+
+        .users-table th,
+        .users-table td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            vertical-align: top;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .users-table th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+
+        .users-table tbody tr:hover {
+            background: #fafcff;
+        }
+
+        .cell-email {
+            width: 180px;
+        }
+
+        .cell-name {
+            width: 180px;
+        }
+
+        .cell-status {
+            width: 170px;
+        }
+
+        .cell-permissions {
+            width: 280px;
+        }
+
+        .cell-password {
+            width: 240px;
+        }
+
+        .cell-save {
+            width: 140px;
+        }
+
+        .user-email {
+            font-weight: 700;
+            color: #0f172a;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+
+        .compact-input {
+            width: 100%;
+            height: 40px;
+            border: 1px solid #d8dee8;
+            border-radius: 12px;
+            padding: 0 12px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .status-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .permission-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .mini-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 8px 10px;
+            min-height: 40px;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        .inline-check {
+            width: 100%;
+        }
+
+        .mini-tag {
+            min-width: 110px;
+        }
+
+        .mini-check input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        .password-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-small {
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .save-btn-full {
+            width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            .users-table {
+                min-width: 1100px;
+            }
+        }
+
+        .user-card-list {
+            display: grid;
+            gap: 18px;
+            margin-top: 14px;
+        }
+
+        .user-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .user-card-top {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 18px;
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        .user-card-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .user-card-email {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            word-break: break-word;
+        }
+
+        .admin-input {
+            width: 100%;
+            height: 42px;
+            border: 1px solid #d8dee8;
+            border-radius: 12px;
+            padding: 0 12px;
+            box-sizing: border-box;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .admin-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .user-card-body {
+            display: grid;
+            gap: 16px;
+        }
+
+        .user-card-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        .user-card-section h3 {
+            margin: 0 0 12px;
+            font-size: 15px;
+            color: #0f172a;
+        }
+
+        .chip-check-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .chip-check-list.two-col {
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+        }
+
+        .chip-check-list.three-col {
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+        }
+
+        .chip-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 42px;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1px solid #dbe3ee;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .chip-check:hover {
+            border-color: #c2d2ea;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .chip-check input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        .chip-check span {
+            font-size: 14px;
+            color: #1f2937;
+            line-height: 1.35;
+        }
+
+        .password-reset-row {
+            display: grid;
+            grid-template-columns: 1fr 160px;
+            gap: 12px;
+        }
+
+        .user-card-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .btn-small {
+            height: 40px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 980px) {
+            .user-card-top {
+                grid-template-columns: 1fr;
+            }
+
+            .chip-check-list.two-col,
+            .chip-check-list.three-col {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .password-reset-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+
+            .chip-check-list.two-col,
+            .chip-check-list.three-col {
+                grid-template-columns: 1fr;
+            }
+
+            .user-card-actions {
+                justify-content: stretch;
+            }
+
+            .user-card-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div>
+                <h1>Quản lý tài khoản</h1>
+                <p>Tạo tài khoản và phân quyền người dùng</p>
+            </div>
+
+            <div class="actions">
+                <button class="btn" onclick="window.location.href='/'">Về trang chính</button>
+                <button class="btn-danger" id="logoutBtn">Đăng xuất</button>
+            </div>
+        </div>
+
+        <div class="card admin-create-card">
+            <h2>Tạo tài khoản mới</h2>
+
+            <form id="createUserForm" class="create-user-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="createEmail">Email</label>
+                        <input id="createEmail" type="email" placeholder="Nhập email" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="createPassword">Mật khẩu</label>
+                        <input id="createPassword" type="password" placeholder="Nhập mật khẩu" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="createFullName">Họ tên</label>
+                        <input id="createFullName" type="text" placeholder="Nhập họ tên" />
+                    </div>
+                </div>
+
+                <div class="permission-box">
+                    <div class="permission-box-title">Phân quyền</div>
+
+                    <div class="permission-grid-clean">
+                        <label class="perm-item">
+                            <input type="checkbox" id="permImportExcel" checked />
+                            <span>Import Excel</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permImportFolder" checked />
+                            <span>Import Folder</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permSearchImage" checked />
+                            <span>Tìm theo ảnh</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permViewData" checked />
+                            <span>Xem dữ liệu</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permResetData" />
+                            <span>Reset dữ liệu</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permManageUsers" />
+                            <span>Quản lý tài khoản</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permIsAdmin" />
+                            <span>Là admin</span>
+                        </label>
+
+                        <label class="perm-item">
+                            <input type="checkbox" id="permIsActive" checked />
+                            <span>Đang hoạt động</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn" type="submit">Tạo tài khoản</button>
+                </div>
+
+                <div class="status" id="createUserStatus"></div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Danh sách tài khoản</h2>
+            <div class="status" id="usersStatus"></div>
+            <div id="usersTableWrap"></div>
+        </div>
+    </div>
+
+    <script>
+        const logoutBtn = document.getElementById("logoutBtn");
+        const createUserForm = document.getElementById("createUserForm");
+        const createUserStatus = document.getElementById("createUserStatus");
+        const usersStatus = document.getElementById("usersStatus");
+        const usersTableWrap = document.getElementById("usersTableWrap");
+
+        logoutBtn.addEventListener("click", async () => {
+            await fetch("/api/logout", { method: "POST" });
+            window.location.href = "/login";
+        });
+
+        async function loadUsers() {
+            usersStatus.textContent = "Đang tải danh sách tài khoản...";
+
+            try {
+                const response = await fetch("/api/admin/users");
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    usersStatus.textContent = result.message || "Không tải được danh sách user";
+                    return;
+                }
+
+                const users = Array.isArray(result.data?.users) ? result.data.users : [];
+                usersStatus.textContent = `Có ${users.length} tài khoản`;
+
+                usersTableWrap.innerHTML = `
+                <div class="user-card-list">
+                    ${users.map(renderUserCard).join("")}
+                </div>
+                `;
+
+                bindUserActions();
+            } catch (error) {
+                console.error(error);
+                usersStatus.textContent = "Có lỗi khi tải danh sách user";
+            }
+        }
+
+        function renderUserCard(user) {
+            return `
+                <article class="user-card" data-user-id="${user.id}">
+                <div class="user-card-top">
+                    <div class="user-card-email-wrap">
+                    <div class="user-card-label">Email</div>
+                    <div class="user-card-email">${escapeHtml(user.email)}</div>
+                    </div>
+
+                    <div class="user-card-name-wrap">
+                    <div class="user-card-label">Họ tên</div>
+                    <input
+                        class="small-input input-full-name admin-input"
+                        type="text"
+                        value="${escapeAttr(user.fullName || "")}"
+                        placeholder="Họ tên"
+                    />
+                    </div>
+                </div>
+
+                <div class="user-card-body">
+                    <section class="user-card-section">
+                    <h3>Trạng thái</h3>
+                    <div class="chip-check-list two-col">
+                        <label class="chip-check">
+                        <input class="input-active" type="checkbox" ${user.isActive ? "checked" : ""} />
+                        <span>Đang hoạt động</span>
+                        </label>
+
+                        <label class="chip-check">
+                        <input class="input-admin" type="checkbox" ${user.isAdmin ? "checked" : ""} />
+                        <span>Là admin</span>
+                        </label>
+                    </div>
+                    </section>
+
+                    <section class="user-card-section">
+                    <h3>Phân quyền</h3>
+                    <div class="chip-check-list three-col">
+                        <label class="chip-check">
+                        <input class="perm-import-excel" type="checkbox" ${user.permissions.canImportExcel ? "checked" : ""} />
+                        <span>Import Excel</span>
+                        </label>
+
+                        <label class="chip-check">
+                        <input class="perm-import-folder" type="checkbox" ${user.permissions.canImportFolder ? "checked" : ""} />
+                        <span>Import Folder</span>
+                        </label>
+
+                        <label class="chip-check">
+                        <input class="perm-search-image" type="checkbox" ${user.permissions.canSearchImage ? "checked" : ""} />
+                        <span>Tìm theo ảnh</span>
+                        </label>
+
+                        <label class="chip-check">
+                        <input class="perm-view-data" type="checkbox" ${user.permissions.canViewData ? "checked" : ""} />
+                        <span>Xem dữ liệu</span>
+                        </label>
+
+                        <label class="chip-check">
+                        <input class="perm-reset-data" type="checkbox" ${user.permissions.canResetData ? "checked" : ""} />
+                        <span>Reset dữ liệu</span>
+                        </label>
+
+                        <label class="chip-check">
+                        <input class="perm-manage-users" type="checkbox" ${user.permissions.canManageUsers ? "checked" : ""} />
+                        <span>Quản lý tài khoản</span>
+                        </label>
+                    </div>
+                    </section>
+
+                    <section class="user-card-section">
+                    <h3>Mật khẩu mới</h3>
+                    <div class="password-reset-row">
+                        <input
+                        class="small-input input-new-password admin-input"
+                        type="text"
+                        placeholder="Nhập mật khẩu mới"
+                        />
+                        <button class="btn btn-reset-password btn-small" type="button">Đổi mật khẩu</button>
+                    </div>
+                    </section>
+                </div>
+
+                <div class="user-card-actions">
+                    <button class="btn btn-save-user btn-small" type="button">Lưu quyền</button>
+                </div>
+                </article>
+            `;
+        }
+
+
+        function bindUserActions() {
+            document.querySelectorAll(".btn-save-user").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const row = btn.closest("[data-user-id]");
+                    const userId = row.dataset.userId;
+
+                    const payload = {
+                        full_name: row.querySelector(".input-full-name").value.trim(),
+                        is_active: row.querySelector(".input-active").checked,
+                        is_admin: row.querySelector(".input-admin").checked,
+                        can_import_excel: row.querySelector(".perm-import-excel").checked,
+                        can_import_folder: row.querySelector(".perm-import-folder").checked,
+                        can_search_image: row.querySelector(".perm-search-image").checked,
+                        can_view_data: row.querySelector(".perm-view-data").checked,
+                        can_reset_data: row.querySelector(".perm-reset-data").checked,
+                        can_manage_users: row.querySelector(".perm-manage-users").checked
+                    };
+
+                    const response = await fetch(`/api/admin/users/${userId}/permissions`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    alert(result.message || "Đã lưu");
+                    loadUsers();
+                });
+            });
+
+            document.querySelectorAll(".btn-reset-password").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const row = btn.closest("[data-user-id]");
+                    const userId = row.dataset.userId;
+                    const password = row.querySelector(".input-new-password").value.trim();
+
+                    if (!password) {
+                        alert("Nhập mật khẩu mới");
+                        return;
+                    }
+
+                    const response = await fetch(`/api/admin/users/${userId}/password`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ password })
+                    });
+
+                    const result = await response.json();
+                    alert(result.message || "Đã đổi mật khẩu");
+                    row.querySelector(".input-new-password").value = "";
+                });
+            });
+        }
+
+        createUserForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const payload = {
+                email: document.getElementById("createEmail").value.trim(),
+                password: document.getElementById("createPassword").value,
+                full_name: document.getElementById("createFullName").value.trim(),
+                can_import_excel: document.getElementById("permImportExcel").checked,
+                can_import_folder: document.getElementById("permImportFolder").checked,
+                can_search_image: document.getElementById("permSearchImage").checked,
+                can_view_data: document.getElementById("permViewData").checked,
+                can_reset_data: document.getElementById("permResetData").checked,
+                can_manage_users: document.getElementById("permManageUsers").checked,
+                is_admin: document.getElementById("permIsAdmin").checked,
+                is_active: document.getElementById("permIsActive").checked
+            };
+
+            createUserStatus.textContent = "Đang tạo tài khoản...";
+
+            try {
+                const response = await fetch("/api/admin/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    createUserStatus.textContent = result.message || "Tạo tài khoản thất bại";
+                    return;
+                }
+
+                createUserStatus.textContent = result.message;
+                createUserForm.reset();
+                document.getElementById("permImportExcel").checked = true;
+                document.getElementById("permImportFolder").checked = true;
+                document.getElementById("permSearchImage").checked = true;
+                document.getElementById("permViewData").checked = true;
+                document.getElementById("permIsActive").checked = true;
+                loadUsers();
+            } catch (error) {
+                console.error(error);
+                createUserStatus.textContent = "Có lỗi khi tạo tài khoản";
+            }
+        });
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function escapeAttr(value) {
+            return String(value ?? "").replace(/"/g, "&quot;");
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 
-<body>
+<body data-base-path="{{ base_path }}">
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-brand">
@@ -32,6 +32,14 @@
         <button class="sidebar-nav-btn" id="navDataBtn" data-target="dataCard" disabled>
           Dữ liệu Excel
         </button>
+
+        <button class="sidebar-nav-btn" id="navResetScopeBtn" data-target="resetScopeCard" disabled>
+          Reset dữ liệu
+        </button>
+
+        <button class="sidebar-nav-btn hidden" id="navAdminBtn" type="button">
+          Quản lý
+        </button>
       </nav>
     </aside>
 
@@ -39,16 +47,16 @@
       <header class="page-header">
         <div>
           <h2 class="page-title">
-            <img src="{{ url_for('static', filename='images/user-manual-icon-flat-style-vector.jpg') }}" alt="" class="header-image" />
+            <img src="{{ url_for('static', filename='images/user-manual-icon-flat-style-vector.jpg') }}" alt=""
+              class="header-image" />
           </h2>
-          <!-- <p>Import Excel, map folder theo Style No và tìm hàng gần giống bằng ảnh.</p> -->
+        </div>
+
+        <div class="top-user-box">
+          <span id="currentUserLabel"></span>
+          <button type="button" id="logoutBtn" class="secondary-btn">Đăng xuất</button>
         </div>
       </header>
-
-      <!-- <section class="card summary-card hidden" id="summaryCard">
-        <h3>Thông tin tổng quan</h3>
-        <div id="summaryContent" class="summary-grid"></div>
-      </section> -->
 
       <section class="card feature-panel" id="uploadCard">
         <h3>1. Import file Excel</h3>
@@ -86,15 +94,93 @@
             <h3>4. Dữ liệu Excel</h3>
           </div>
 
-          <button type="button" id="resetDataBtn" class="danger-btn">
+          <button type="button" hidden id="resetDataBtn" class="danger-btn">
             Reset toàn bộ
           </button>
         </div>
 
+        <div class="data-tools">
+          <input id="excelSearchInput" type="text"
+            placeholder="Tìm theo Customer, Staff, Style No, Style Name, Product, Categories..." />
+          <button type="button" id="clearExcelSearchBtn" class="secondary-btn">
+            Xóa tìm kiếm
+          </button>
+        </div>
+
+        <p id="excelSearchStatus" class="status-text">
+          Nhập từ khóa để lọc dữ liệu theo tất cả cột text.
+        </p>
+
         <div id="sheetTabs" class="sheet-tabs"></div>
         <div id="excelDataContainer"></div>
       </section>
+
+      <section class="card feature-panel hidden panel-collapsed" id="resetScopeCard">
+        <div class="panel-header">
+          <div>
+            <h3>5. Reset dữ liệu theo Customer / Season</h3>
+          </div>
+        </div>
+
+        <div class="reset-scope-tools">
+          <div class="custom-select" id="resetCustomerBox">
+            <button type="button" class="custom-select-trigger" id="resetCustomerTrigger">
+              Chọn customer
+            </button>
+            <div class="custom-select-menu hidden" id="resetCustomerMenu"></div>
+          </div>
+
+          <div class="custom-select" id="resetSeasonBox">
+            <button type="button" class="custom-select-trigger" id="resetSeasonTrigger">
+              Chọn season
+            </button>
+            <div class="custom-select-menu hidden" id="resetSeasonMenu"></div>
+          </div>
+        </div>
+
+        <div class="data-tools">
+          <button type="button" id="resetSeasonBtn" class="danger-btn">
+            Reset customer + season
+          </button>
+
+          <button type="button" id="resetCustomerBtn" class="danger-btn">
+            Reset toàn bộ customer
+          </button>
+        </div>
+
+        <p id="resetScopeStatus" class="status-text">Chọn customer hoặc season để reset dữ liệu.</p>
+      </section>
+
+
+
     </main>
+  </div>
+
+  <div id="imageLightbox" class="lightbox hidden">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-img" src="" />
+  </div>
+
+  <div id="confirmModal" class="confirm-modal hidden">
+    <div class="confirm-modal-backdrop" data-confirm-close="backdrop"></div>
+
+    <div class="confirm-modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+      <div class="confirm-modal-header">
+        <h3 id="confirmModalTitle">Xác nhận thao tác</h3>
+        <button type="button" class="confirm-modal-close" id="confirmModalCloseBtn" aria-label="Đóng">
+          <span>×</span>
+        </button>
+      </div>
+
+      <div class="confirm-modal-body">
+        <p id="confirmModalMessage">Bạn có chắc muốn thực hiện thao tác này không?</p>
+      </div>
+
+      <div class="confirm-modal-actions">
+        <button type="button" class="secondary-btn" id="confirmModalCancelBtn">Hủy</button>
+        <button type="button" class="danger-btn" id="confirmModalOkBtn">Xác nhận</button>
+      </div>
+    </div>
   </div>
 
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>

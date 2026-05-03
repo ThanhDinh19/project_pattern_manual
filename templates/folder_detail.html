@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Folder {{ folder.name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
+
 <body class="folder-page-body">
   <div class="folder-page-shell">
     <div class="folder-page-topbar">
-      <a class="back-link" href="/">← Quay lại trang chính</a>
+      <a class="back-link" href="{{ base_path }}/">← Quay lại trang chính</a>
     </div>
 
     <section class="folder-hero-card">
@@ -35,95 +37,96 @@
 
     <section class="folder-content-card">
       {% if folder.files %}
-        <div class="folder-toolbar">
-          <div class="folder-toolbar-title">
-            <h2>Danh sách file</h2>
-            <p>{{ folder.fileCount }} file trong folder này</p>
+      <div class="folder-toolbar">
+        <div class="folder-toolbar-title">
+          <h2>Danh sách file</h2>
+          <p>{{ folder.fileCount }} file trong folder này</p>
+        </div>
+
+        <div class="folder-toolbar-actions">
+          <a class="folder-link-btn folder-download-btn" href="{{ base_path }}/folder-download/{{ folder.id }}">
+            Tải folder (.zip)
+          </a>
+        </div>
+      </div>
+
+      <div class="folder-file-grid better-folder-grid">
+        {% for file in folder.files %}
+        <article class="folder-file-card better-folder-card">
+          <div class="folder-file-preview-wrap">
+            {% if file.isImage %}
+            <a href="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}" target="_blank"
+              rel="noopener noreferrer" class="folder-preview-link">
+              <img class="folder-file-preview better-folder-preview"
+                src="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}" alt="{{ file.name }}" />
+            </a>
+            {% elif file.isPdf %}
+            <div class="folder-file-placeholder pdf-placeholder">
+              <span>PDF</span>
+            </div>
+            {% else %}
+            <div class="folder-file-placeholder generic-placeholder">
+              <span>FILE</span>
+            </div>
+            {% endif %}
           </div>
-        </div>
 
-        <div class="folder-file-grid better-folder-grid">
-          {% for file in folder.files %}
-            <article class="folder-file-card better-folder-card">
-              <div class="folder-file-preview-wrap">
-                {% if file.isImage %}
-                  <a
-                    href="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="folder-preview-link"
-                  >
-                    <img
-                      class="folder-file-preview better-folder-preview"
-                      src="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}"
-                      alt="{{ file.name }}"
-                    />
-                  </a>
-                {% elif file.isPdf %}
-                  <div class="folder-file-placeholder pdf-placeholder">
-                    <span>PDF</span>
-                  </div>
-                {% else %}
-                  <div class="folder-file-placeholder generic-placeholder">
-                    <span>FILE</span>
-                  </div>
-                {% endif %}
-              </div>
-
-              <div class="folder-file-info better-folder-info">
-                <div class="folder-file-topline">
-                  <span class="file-type-badge
+          <div class="folder-file-info better-folder-info">
+            <div class="folder-file-topline">
+              <span class="file-type-badge
                     {% if file.isImage %}badge-image{% elif file.isPdf %}badge-pdf{% else %}badge-file{% endif %}">
-                    {% if file.isImage %}
-                      Ảnh
-                    {% elif file.isPdf %}
-                      PDF
-                    {% else %}
-                      Tệp
-                    {% endif %}
-                  </span>
+                {% if file.isImage %}
+                Ảnh
+                {% elif file.isPdf %}
+                PDF
+                {% else %}
+                Tệp
+                {% endif %}
+              </span>
 
-                  <span class="file-size-badge">{{ file.sizeKb }} KB</span>
-                </div>
+              <span class="file-size-badge">{{ file.sizeKb }} KB</span>
+            </div>
 
-                <h3 class="folder-file-name better-folder-name" title="{{ file.name }}">
-                  {{ file.name }}
-                </h3>
+            <h3 class="folder-file-name better-folder-name" title="{{ file.name }}">
+              {{ file.name }}
+            </h3>
 
-                <div class="folder-file-meta-list">
-                  <div class="folder-meta-row">
-                    <span class="meta-label">Đường dẫn</span>
-                    <span class="meta-value" title="{{ file.relPath }}">{{ file.relPath }}</span>
-                  </div>
-
-                  <div class="folder-meta-row">
-                    <span class="meta-label">Định dạng</span>
-                    <span class="meta-value">{{ file.ext or "-" }}</span>
-                  </div>
-                </div>
+            <div class="folder-file-meta-list">
+              <div class="folder-meta-row">
+                <span class="meta-label">Đường dẫn</span>
+                <span class="meta-value" title="{{ file.relPath }}">{{ file.relPath }}</span>
               </div>
 
-              <div class="folder-file-actions better-folder-actions">
-                <a
-                  class="folder-link-btn"
-                  href="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Mở file
-                </a>
+              <div class="folder-meta-row">
+                <span class="meta-label">Định dạng</span>
+                <span class="meta-value">{{ file.ext or "-" }}</span>
               </div>
-            </article>
-          {% endfor %}
-        </div>
+            </div>
+          </div>
+
+          <div class="folder-file-actions better-folder-actions">
+            <a class="folder-link-btn" href="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}"
+              target="_blank" rel="noopener noreferrer">
+              Mở file
+            </a>
+
+            <a class="folder-link-btn folder-download-btn"
+              href="{{ base_path }}/folder-download-file/{{ folder.id }}/{{ file.relPath }}">
+              Tải file
+            </a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
       {% else %}
-        <div class="folder-empty-state">
-          <div class="folder-empty-icon">📂</div>
-          <h2>Folder này chưa có file nào</h2>
-          <p>Hãy kiểm tra lại folder bạn import hoặc chọn đúng thư mục con chứa dữ liệu.</p>
-        </div>
+      <div class="folder-empty-state">
+        <div class="folder-empty-icon">📂</div>
+        <h2>Folder này chưa có file nào</h2>
+        <p>Hãy kiểm tra lại folder bạn import hoặc chọn đúng thư mục con chứa dữ liệu.</p>
+      </div>
       {% endif %}
     </section>
   </div>
 </body>
+
 </html>
