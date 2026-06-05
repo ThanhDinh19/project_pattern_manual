@@ -1,0 +1,88 @@
+------------- NĂNG SUẤT CÁ NHÂN ---------------
+
+- nhập năng suất cá nhân bị vượt BTP 
+ + hướng xử lý: kiểm tra lại công đoạn xem có ai nhập nhầm không, kiểm tra cấp BTP nhập đủ chưa, chưa thì liên hệ bên tổ trưởng cho nhập ngay trong ngày
+
+- nhập năng suất cá nhân: ko có dữ liệu để nhập
+ + hướng xử lý: liên hệ phòng sản xuất giao kế hoạch may và đồng bộ dữ liệu
+
+- app nhập ns cá nhân không lưu mật khẩu
+ + hướng xử lý: tra tên người dùng và nhập lại (ghi nhớ)    
+
+- nhập nhẩy khâu bị mất đoạn
+ + hướng xử lý: liên hệ IE cập nhật vào
+
+- không có mã hàng để phân cụm trưởng
+ + hướng xử lý: liên hệ phòng sản xuất giao kế hoạch may
+
+- đăng nhập bị báo sai tài khoản hoặc mật khẩu
+ + hướng xử lý: reset lại mật khẩu
+
+
+ --------------- NĂNG SUẤT CỤM --------------
+ 
+- bấm cụm không được
+ + nguyên nhân: chưa phân cụm trưởng
+ + hướng xử lý: check và báo lại với tổ trưởng để phân cụm
+
+- bấm cụm BTP bị vượt số lượng từ nhà cắt
+ + hướng xử lý: liên hệ bên giao nhận nhập liệu lên hệ thống
+
+- giao kế hoạch cho mã mới rồi nhưng trên app CBC không có mã để bấm cụm
+ + hướng xử lý: thoát app vào lại
+
+
+ -------------- TIVI ---------------
+- bấm cụm trên điện thoại nhưng màn hình tivi không cập nhật
+ + hướng xử lý: tắt mở lại tivi
+
+- màn hình tivi bị mất tín hiệu
+ + hướng xử lý: tắt mở lại tivi
+
+- không cập nhật mã hàng lên màn hình
+ + nguyên nhân: chưa giao kế hoạch ngày
+ + hướng xử lý: liên hệ quản đốc giao kế hoạch ngày
+
+ -------------- APP ---------------
+
+ - người mới không đăng nhập vào được app CBC, OFFICE
+  + hướng xử lý: reset lại mật khẩu
+
+--------------- TỔ CẮT ---------------
+
+- nhập liệu lệnh cấp BTP rồi nhưng chuyền may không bấm được năng suất cụm
+ + hướng xử lý: liên hệ Hà TRE check lại
+ 
+- bên giao nhận chưa nhập lệnh BTP nhưng chuyền may lại bấm được
+ + hướng xử lý: liên hệ Hà TRE check
+l
+--------------- QC ---------------
+- QC bấm hàng đạt bị vượt BTP
+ + hướng xử lý: liên hệ tổ trưởng nhắc nhở cụm BTP bấm ns 
+
+- QC sang chuyền khác đứng đăng nhập tk của mình vào hệ thống không được do chưa duyệt
+ + hướng xử lý: duyệt địa chỉ MAC
+
+- không đăng nhập vào được hệ thống TRE, do mất kết nối mạng
+ + hướng xử lý: kết nối lại mạng sau đó đăng nhập lại
+
+- đầu ngày không tìm thấy mã hàng để bấm
++ nguyên nhân: kết thúc ngày vào chuyền
++ hướng xử lý: kiểm tra lại và liên hệ Phòng sản xuất kiểm tra và giao lại
+
+--------------- TỔ HOÀN THIỆN ---------------
+- hỗ trợ: cài app và hướng dẫn nhập ns cá nhân
+
+--------------- GỌI CƠ ĐIỆN ---------------
+
+- một số điện thoại có lúc bấm gọi cơ điện không được nhưng gọi tổ trưởng, kỹ thuật thì được
+ + hướng xử lý: xóa app cài lại
+
+- gọi cơ điện nhưng lo không đọc
+ + hướng xử lý: tắt hệ thống mở lại
+
+- gọi cơ điện bị đọc đi đọc lại nhiều lần
+ + hướng xử lý: tắt mở lại hệ thống
+
+
+
