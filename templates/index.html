@@ -6,41 +6,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pattern Manual</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}?v=2" type="image/x-icon">
 </head>
 
 <body data-base-path="{{ base_path }}">
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <h1>Pattern Manual</h1>
-        <!-- <p>Quản lý Excel, folder và tìm ảnh</p> -->
+    <aside class="sidebar sidebar-clean">
+      <div class="sidebar-top">
+        <div class="sidebar-brand sidebar-brand-clean">
+          <button class="sidebar-toggle-btn" type="button" aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 7h10M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M17 7l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </button>
+
+          <div class="sidebar-brand-text">
+            <h1>Pattern Manual</h1>
+            <span class="sidebar-badge">PD</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav sidebar-nav-clean">
+          <button class="sidebar-nav-btn active" id="navExcelBtn" data-target="uploadCard" type="button">
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" stroke="currentColor"
+                  stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M9 13h6M9 17h6M9 9h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Nhập Excel</span>
+          </button>
+
+          <button class="sidebar-nav-btn" id="navFolderBtn" data-target="folderCard" type="button" disabled>
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H3V7Z" stroke="currentColor" stroke-width="1.8"
+                  stroke-linejoin="round" />
+                <path d="M3 10h18l-1.2 8.4A2 2 0 0 1 17.82 20H6.18a2 2 0 0 1-1.98-1.6L3 10Z" stroke="currentColor"
+                  stroke-width="1.8" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Liên kết Folder</span>
+          </button>
+
+          <button class="sidebar-nav-btn" id="navImageBtn" data-target="imageSearchCard" type="button" disabled>
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
+                <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M9.5 11.2 10.8 12.5 13.8 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Tra cứu ảnh</span>
+          </button>
+
+          <button class="sidebar-nav-btn" id="navDataBtn" data-target="dataCard" type="button" disabled>
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z"
+                  stroke="currentColor" stroke-width="1.8" />
+                <path d="M4 9h16M9 4v16" stroke="currentColor" stroke-width="1.8" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Dữ liệu đã nhập</span>
+          </button>
+
+          <button class="sidebar-nav-btn" id="navResetScopeBtn" data-target="resetScopeCard" type="button" disabled>
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 6v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M20 11a8 8 0 1 1-2.34-5.66L20 6" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Làm sạch dữ liệu</span>
+          </button>
+
+          <button class="sidebar-nav-btn hidden" id="navAuditBtn" data-target="auditCard" type="button">
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M8 6h8M8 12h8M8 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor"
+                  stroke-width="1.8" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Lịch sử thao tác</span>
+          </button>
+
+          <button class="sidebar-nav-btn hidden" id="navAdminBtn" data-target="adminCard" type="button">
+            <span class="sidebar-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" />
+                <circle cx="9.5" cy="7" r="3" stroke="currentColor" stroke-width="1.8" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M16 4.13a3 3 0 0 1 0 5.74" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="sidebar-nav-label">Người dùng & quyền</span>
+          </button>
+        </nav>
       </div>
 
-      <nav class="sidebar-nav">
-        <button class="sidebar-nav-btn active" id="navExcelBtn" data-target="uploadCard">
-          Import Excel
-        </button>
+      <div class="sidebar-bottom">
+        <div class="sidebar-user-mini">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">U</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="currentUserLabel">user@gmail.com</div>
+            <div class="sidebar-user-sub">Đang đăng nhập</div>
+          </div>
+        </div>
 
-        <button class="sidebar-nav-btn" id="navFolderBtn" data-target="folderCard" disabled>
-          Import Folder
+        <button type="button" id="logoutBtn" class="sidebar-logout-btn">
+          <span class="sidebar-nav-icon">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M15 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" />
+              <path d="M10 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M15 12H4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span>Đăng xuất</span>
         </button>
-
-        <button class="sidebar-nav-btn" id="navImageBtn" data-target="imageSearchCard" disabled>
-          Tìm theo ảnh
-        </button>
-
-        <button class="sidebar-nav-btn" id="navDataBtn" data-target="dataCard" disabled>
-          Dữ liệu Excel
-        </button>
-
-        <button class="sidebar-nav-btn" id="navResetScopeBtn" data-target="resetScopeCard" disabled>
-          Reset dữ liệu
-        </button>
-
-        <button class="sidebar-nav-btn hidden" id="navAdminBtn" type="button">
-          Quản lý
-        </button>
-      </nav>
+      </div>
     </aside>
 
     <main class="main-content">
@@ -51,12 +148,9 @@
               class="header-image" />
           </h2>
         </div>
-
-        <div class="top-user-box">
-          <span id="currentUserLabel"></span>
-          <button type="button" id="logoutBtn" class="secondary-btn">Đăng xuất</button>
-        </div>
       </header>
+
+      <!-- import excel -->
 
       <section class="card feature-panel" id="uploadCard">
         <h3>1. Import file Excel</h3>
@@ -67,6 +161,8 @@
         <p id="uploadResult" class="status-text">Chưa có dữ liệu</p>
       </section>
 
+      <!-- Import folder -->
+
       <section class="card feature-panel hidden panel-collapsed" id="folderCard">
         <h3>2. Import folder Pattern Manual</h3>
         <form id="folderImportForm" class="upload-form">
@@ -75,6 +171,8 @@
         </form>
         <p id="folderResult" class="status-text">Chưa import folder</p>
       </section>
+
+      <!-- Tìm kiếm theo ảnh -->
 
       <section class="card feature-panel hidden panel-collapsed" id="imageSearchCard">
         <h3>3. Tìm theo ảnh dán từ clipboard</h3>
@@ -87,6 +185,8 @@
         <p id="searchStatus" class="status-text">Chưa dán ảnh</p>
         <div id="matchResults" class="match-results"></div>
       </section>
+
+      <!-- Dữ liệu đã nhập -->
 
       <section class="card feature-panel hidden panel-collapsed" id="dataCard">
         <div class="panel-header">
@@ -114,6 +214,9 @@
         <div id="sheetTabs" class="sheet-tabs"></div>
         <div id="excelDataContainer"></div>
       </section>
+
+
+      <!-- Reset dữ liệu -->
 
       <section class="card feature-panel hidden panel-collapsed" id="resetScopeCard">
         <div class="panel-header">
@@ -151,15 +254,290 @@
         <p id="resetScopeStatus" class="status-text">Chọn customer hoặc season để reset dữ liệu.</p>
       </section>
 
+      <!-- Quản lý tài khoản -->
 
+      <section class="card feature-panel hidden panel-collapsed" id="adminCard">
+        <div class="admin-grid-head">
+          <div>
+            <h3>6. Quản lý tài khoản</h3>
+            <p class="status-text">Quản lý người dùng, phân quyền và trạng thái hoạt động</p>
+          </div>
+
+          <div class="admin-grid-tools">
+            <input id="adminUserSearch" type="text" class="admin-grid-search"
+              placeholder="Tìm theo email hoặc họ tên..." />
+            <button type="button" class="secondary-btn" id="adminReloadBtn">Làm mới</button>
+            <button type="button" class="btn" id="openCreateUserModalBtn">+ Tạo user</button>
+          </div>
+        </div>
+
+        <p id="usersStatus" class="status-text">Đang tải danh sách tài khoản...</p>
+        <div id="usersTableWrap" class="admin-user-grid-wrap"></div>
+      </section>
+
+      <!-- Lịch sử -->
+
+      <section class="card feature-panel hidden panel-collapsed" id="auditCard">
+        <div class="admin-history-head">
+          <div>
+            <h3>7. Lịch sử thao tác</h3>
+            <p class="status-text">Theo dõi ai đã import, reset hoặc thao tác quản trị.</p>
+          </div>
+
+          <button type="button" class="secondary-btn" id="reloadAuditLogsBtn">
+            Làm mới lịch sử
+          </button>
+        </div>
+
+        <div class="admin-history-table-wrap">
+          <table class="admin-history-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Người thao tác</th>
+                <th>Hành động</th>
+                <th>Đối tượng</th>
+                <th>Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody id="auditLogsTableBody">
+              <tr>
+                <td colspan="5" class="admin-history-empty">Đang tải lịch sử thao tác...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Create User Modal -->
+
+      <div id="createUserModal" class="admin-modal hidden">
+        <div class="admin-modal-backdrop" data-admin-close="create"></div>
+        <div class="admin-modal-card admin-modal-md">
+          <div class="admin-modal-header">
+            <div>
+              <h3>Tạo tài khoản mới</h3>
+              <p>Điền thông tin cơ bản và chọn quyền cần cấp.</p>
+            </div>
+            <button type="button" class="admin-modal-close" id="createUserModalCloseBtn">×</button>
+          </div>
+
+          <form id="createUserForm" class="admin-modal-form">
+            <div class="admin-form-grid">
+              <div class="admin-field">
+                <label for="createEmail">Email</label>
+                <input id="createEmail" type="email" placeholder="Nhập email" required />
+              </div>
+
+              <div class="admin-field">
+                <label for="createPassword">Mật khẩu</label>
+                <input id="createPassword" type="password" placeholder="Nhập mật khẩu" required />
+              </div>
+
+              <div class="admin-field admin-field-full">
+                <label for="createFullName">Họ tên</label>
+                <input id="createFullName" type="text" placeholder="Nhập họ tên" />
+              </div>
+            </div>
+
+            <div class="admin-perm-section">
+              <div class="admin-perm-title">Quyền chức năng</div>
+              <div class="admin-perm-grid">
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permImportExcel" checked />
+                  <span>Nhập Excel</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permImportFolder" checked />
+                  <span>Liên kết Folder</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permSearchImage" checked />
+                  <span>Tra cứu ảnh</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permViewData" checked />
+                  <span>Xem dữ liệu</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permResetData" />
+                  <span>Làm sạch dữ liệu</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permViewAuditLogs" />
+                  <span>Xem lịch sử thao tác</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permManageUsers" />
+                  <span>Quản lý tài khoản</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="admin-perm-section">
+              <div class="admin-perm-title">Trạng thái</div>
+              <div class="admin-perm-grid admin-perm-grid-2">
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permIsAdmin" />
+                  <span>Là admin</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="permIsActive" checked />
+                  <span>Đang hoạt động</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="admin-modal-actions">
+              <button type="button" class="secondary-btn" id="cancelCreateUserBtn">Hủy</button>
+              <button type="submit" class="btn">Tạo tài khoản</button>
+            </div>
+
+            <div class="status-text" id="createUserStatus"></div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Edit User Modal -->
+
+      <div id="editUserModal" class="admin-modal hidden">
+        <div class="admin-modal-backdrop" data-admin-close="edit"></div>
+
+        <div class="admin-modal-card admin-modal-lg admin-edit-modal-card">
+          <div class="admin-modal-header admin-modal-header-clean">
+            <div class="admin-modal-title-wrap">
+              <div class="admin-user-avatar-lg" id="editUserAvatar">U</div>
+              <div>
+                <h3 id="editUserModalTitle">Cập nhật tài khoản</h3>
+                <p id="editUserModalSubTitle">Thông tin người dùng</p>
+              </div>
+            </div>
+
+            <button type="button" class="admin-modal-close" id="editUserModalCloseBtn">×</button>
+          </div>
+
+          <input type="hidden" id="editUserId" />
+
+          <div class="admin-edit-layout-v2">
+            <section class="admin-edit-panel">
+              <div class="admin-edit-panel-head">
+                <h4>Thông tin chung</h4>
+                <span class="admin-edit-panel-note">Cập nhật thông tin cơ bản</span>
+              </div>
+
+              <div class="admin-field">
+                <label>Email</label>
+                <input id="editUserEmail" type="text" disabled />
+              </div>
+
+              <div class="admin-field"> 
+                <label>Họ tên</label>
+                <input id="editFullName" type="text" placeholder="Nhập họ tên" />
+              </div>
+
+              <div class="admin-toggle-grid">
+                <label class="admin-check-item admin-check-item-soft">
+                  <input type="checkbox" id="editIsActive" />
+                  <span>Đang hoạt động</span>
+                </label>
+
+                <label class="admin-check-item admin-check-item-soft">
+                  <input type="checkbox" id="editIsAdmin" />
+                  <span>Là admin</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="admin-edit-panel admin-edit-panel-wide">
+              <div class="admin-edit-panel-head">
+                <h4>Phân quyền</h4>
+                <span class="admin-edit-panel-note">Bật các chức năng được phép sử dụng</span>
+              </div>
+
+              <div class="admin-perm-grid admin-perm-grid-compact">
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanImportExcel" />
+                  <span>Nhập Excel</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanImportFolder" />
+                  <span>Liên kết Folder</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanSearchImage" />
+                  <span>Tra cứu ảnh</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanViewData" />
+                  <span>Xem dữ liệu</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanResetData" />
+                  <span>Làm sạch dữ liệu</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanViewAuditLogs" />
+                  <span>Xem lịch sử thao tác</span>
+                </label>
+
+                <label class="admin-check-item">
+                  <input type="checkbox" id="editCanManageUsers" />
+                  <span>Quản lý tài khoản</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="admin-edit-panel">
+              <div class="admin-edit-panel-head">
+                <h4>Đổi mật khẩu</h4>
+                <span class="admin-edit-panel-note">Nhập mật khẩu mới cho tài khoản</span>
+              </div>
+
+              <div class="admin-field">
+                <label>Mật khẩu mới</label>
+                <input id="editNewPassword" type="password" placeholder="Nhập mật khẩu mới" />
+              </div>
+
+              <button type="button" class="secondary-btn admin-full-btn" id="resetUserPasswordBtn">
+                Đổi mật khẩu
+              </button>
+            </section>
+          </div>
+
+          <div class="admin-edit-footer">
+            <div class="status-text admin-edit-status" id="editUserStatus"></div>
+
+            <div class="admin-modal-actions">
+              <button type="button" class="secondary-btn" id="cancelEditUserBtn">Đóng</button>
+              <button type="button" class="btn" id="saveEditUserBtn">Lưu thay đổi</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </main>
   </div>
+
+  <!-- Image Lightbox -->
 
   <div id="imageLightbox" class="lightbox hidden">
     <span class="lightbox-close">&times;</span>
     <img class="lightbox-img" src="" />
   </div>
+
+  <!-- Confirm Modal -->
 
   <div id="confirmModal" class="confirm-modal hidden">
     <div class="confirm-modal-backdrop" data-confirm-close="backdrop"></div>

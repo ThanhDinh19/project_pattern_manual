@@ -84,6 +84,7 @@ def user_to_public_payload(user: dict) -> dict:
             "canViewData": bool(user.get("can_view_data")),
             "canResetData": bool(user.get("can_reset_data")),
             "canManageUsers": bool(user.get("can_manage_users")),
+            "canViewAuditLogs": bool(user.get("can_view_audit_logs")),
         },
     }
 
@@ -140,7 +141,6 @@ def permission_required_page(permission_name: str):
     return decorator
 
 
-
 app = Flask(__name__)
 app.secret_key = "pattern_manual_secret_key"
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
@@ -149,21 +149,11 @@ STATE: dict[str, Any] = {
     "imports": [],
     "search_index": [],
     "folder_index": {},
-    "folder_root_dir": None,
-}
-
-STATE: dict[str, Any] = {
-    "partitions": {},          # customer||season -> partition data
-    "imports": [],             # flatten từ tất cả partition
-    "search_index": [],        # flatten từ tất cả partition
-    "folder_index": {},        # flatten từ tất cả partition
-    "current_partition": None, # key partition hiện tại
+    "folder_root_dir": [],
 }
 
 def normalize_email(email: str) -> str:
     return str(email or "").strip().lower();
-
-
 
 def infer_partition_from_sheets(all_sheets: list[dict[str, Any]]) -> dict[str, Any]:
     customer_values: dict[str, int] = {}
@@ -264,11 +254,7 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
             headers = set(sheet.get("headers", []))
 
             for row in sheet.get("rows", []):
-                known_keys = {
-                    "No", "Customer", "Season", "Staff",
-                    "Style No", "Style Name", "Product",
-                    "Categories", "Gender"
-                }
+                known_keys = STANDARD_HEADERS
 
                 extra_json = {
                     k: v for k, v in row.items()
@@ -341,10 +327,372 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
         cursor.close()
         conn.close()
 
+def restore_state_from_mysql() -> None:
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # reset state trước khi rebuild
+        STATE["imports"] = []
+        STATE["search_index"] = []
+        STATE["folder_index"] = {}
+        STATE["folder_root_dir"] = None
+
+        # 1) lấy toàn bộ import
+        cursor.execute(
+            """
+            SELECT
+                id,
+                file_name,
+                sheet_count,
+                total_rows,
+                image_index_count
+            FROM excel_imports
+            ORDER BY id ASC
+            """
+        )
+        import_rows = cursor.fetchall() or []
+
+        if not import_rows:
+            return
+
+        # 2) lấy toàn bộ sheet
+        cursor.execute(
+            """
+            SELECT
+                id,
+                import_id,
+                sheet_name,
+                header_row,
+                row_count
+            FROM excel_sheets
+            ORDER BY import_id ASC, id ASC
+            """
+        )
+        sheet_rows = cursor.fetchall() or []
+
+        # gom sheet theo import
+        sheets_by_import: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for sheet in sheet_rows:
+            sheet_item = {
+                "id": sheet["id"],
+                "import_id": sheet["import_id"],
+                "sheetName": sheet["sheet_name"],
+                "headerRow": sheet["header_row"],
+                "rowCount": sheet["row_count"] or 0,
+                "headers": [],
+                "rows": [],
+            }
+            sheets_by_import[sheet["import_id"]].append(sheet_item)
+
+        # map sheet_id -> object sheet để gắn row
+        sheet_obj_by_id: dict[int, dict[str, Any]] = {}
+        for import_id, sheets in sheets_by_import.items():
+            for sheet in sheets:
+                sheet_obj_by_id[sheet["id"]] = sheet
+
+        # 3) lấy toàn bộ rows
+        cursor.execute(
+            """
+            SELECT
+                id,
+                import_id,
+                sheet_id,
+                excel_row,
+                row_no,
+                customer,
+                season,
+                staff,
+                style_no,
+                style_name,
+                product,
+                categories,
+                gender,
+                extra_json,
+                folder_id,
+                folder_name,
+                detail_url
+            FROM pattern_rows
+            ORDER BY import_id ASC, sheet_id ASC, excel_row ASC, id ASC
+            """
+        )
+        row_rows = cursor.fetchall() or []
+
+        # map pattern_row_id -> row object
+        row_obj_by_id: dict[int, dict[str, Any]] = {}
+
+        for db_row in row_rows:
+            extra_json = db_row.get("extra_json")
+            extra_data = {}
+
+            if extra_json:
+                if isinstance(extra_json, str):
+                    try:
+                        extra_data = json.loads(extra_json)
+                    except Exception:
+                        extra_data = {}
+                elif isinstance(extra_json, dict):
+                    extra_data = extra_json
+
+            row_data: dict[str, Any] = {
+                "No": db_row.get("row_no"),
+                "Customer": db_row.get("customer"),
+                "Season": db_row.get("season"),
+                "Staff": db_row.get("staff"),
+                "Style No": db_row.get("style_no"),
+                "Style Name": db_row.get("style_name"),
+                "Product": db_row.get("product"),
+                "Categories": db_row.get("categories"),
+                "Gender": db_row.get("gender"),
+                "__images": [],
+                "__excelRow": db_row.get("excel_row"),
+                "__folderId": db_row.get("folder_id"),
+                "__folderName": db_row.get("folder_name"),
+                "__detailUrl": db_row.get("detail_url"),
+            }
+
+            # gắn thêm các cột động từ extra_json
+            merge_extra_data_into_row(row_data, extra_data)
+
+            sheet_obj = sheet_obj_by_id.get(db_row["sheet_id"])
+            if not sheet_obj:
+                continue
+
+            sheet_obj["rows"].append(row_data)
+            row_obj_by_id[db_row["id"]] = row_data
+
+        # 4) lấy toàn bộ image rows
+        cursor.execute(
+            """
+            SELECT
+                pattern_row_id,
+                image_order,
+                image_src,
+                image_hash,
+                compare_png
+            FROM pattern_row_images
+            ORDER BY pattern_row_id ASC, image_order ASC, id ASC
+            """
+        )
+        image_rows = cursor.fetchall() or []
+
+        # build search index từ DB
+        rebuilt_search_index: list[dict[str, Any]] = []
+
+        # cần biết row này thuộc sheet nào để trả sheetName
+        row_id_to_sheet_name: dict[int, str] = {}
+        cursor.execute(
+            """
+            SELECT
+                pr.id AS pattern_row_id,
+                es.sheet_name
+            FROM pattern_rows pr
+            INNER JOIN excel_sheets es ON pr.sheet_id = es.id
+            ORDER BY pr.id ASC
+            """
+        )
+        for item in cursor.fetchall() or []:
+            row_id_to_sheet_name[item["pattern_row_id"]] = item["sheet_name"]
+
+        for image_row in image_rows:
+            row_obj = row_obj_by_id.get(image_row["pattern_row_id"])
+            if not row_obj:
+                continue
+
+            image_src = image_row.get("image_src")
+            if image_src:
+                row_obj["__images"].append(image_src)
+
+            compare_png = image_row.get("compare_png")
+            if compare_png is not None and not isinstance(compare_png, (bytes, bytearray)):
+                # mysql connector đôi lúc trả memoryview
+                try:
+                    compare_png = bytes(compare_png)
+                except Exception:
+                    compare_png = None
+
+            rebuilt_search_index.append(
+                {
+                    "sheetName": row_id_to_sheet_name.get(image_row["pattern_row_id"], ""),
+                    "excelRow": row_obj.get("__excelRow"),
+                    "rowRef": row_obj,
+                    "matchedImage": image_src,
+                    "hash": int(image_row["image_hash"]) if image_row.get("image_hash") not in (None, "") else 0,
+                    "compare_png": compare_png,
+                }
+            )
+
+        # 5) rebuild headers cho từng sheet
+        known_header_order = [
+            "No",
+            "Customer",
+            "Season",
+            "Staff",
+            "Style No",
+            "Style Name",
+            "Product",
+            "Categories",
+            "Gender",
+            "Sketch Design",
+        ]
+
+        for import_id, sheets in sheets_by_import.items():
+            for sheet in sheets:
+                header_set = []
+                seen = set()
+
+                # thêm các cột chuẩn nếu row có dữ liệu
+                for header in known_header_order:
+                    real_header = "Sketch Design" if header == "Sketch Design" else header
+
+                    has_value = False
+                    if real_header == "Sketch Design":
+                        has_value = any(row.get("__images") for row in sheet["rows"])
+                    else:
+                        has_value = any(
+                            row.get(real_header) not in (None, "", [])
+                            for row in sheet["rows"]
+                        )
+
+                    if has_value and real_header not in seen:
+                        seen.add(real_header)
+                        header_set.append(real_header)
+
+                # thêm cột động từ extra_json
+                for row in sheet["rows"]:
+                    for key in row.keys():
+                        if key.startswith("__"):
+                            continue
+                        if key not in seen:
+                            seen.add(key)
+                            header_set.append(key)
+
+                if any(row.get("__images") for row in sheet["rows"]) and "Sketch Design" not in seen:
+                    header_set.append("Sketch Design")
+
+                sheet["headers"] = header_set
+                sheet["rowCount"] = len(sheet["rows"])
+
+        # 6) rebuild workbook list
+        for import_item in import_rows:
+            all_sheets = sheets_by_import.get(import_item["id"], [])
+
+            # tính lại partition info như lúc parse file
+            partition_info = infer_partition_from_sheets(all_sheets)
+
+            workbook_search_index = [
+                item
+                for item in rebuilt_search_index
+                if any(item["rowRef"] is row for sheet in all_sheets for row in sheet["rows"])
+            ]
+
+            workbook_data = {
+                "id": import_item["id"],
+                "fileName": import_item["file_name"],
+                "sheetCount": import_item["sheet_count"] or len(all_sheets),
+                "totalRows": import_item["total_rows"] or sum(len(sheet["rows"]) for sheet in all_sheets),
+                "imageIndexCount": import_item["image_index_count"] or len(workbook_search_index),
+                "mappedFolderCount": sum(
+                    1
+                    for sheet in all_sheets
+                    for row in sheet["rows"]
+                    if row.get("__folderId")
+                ),
+                "folderImportName": None,
+                "customer": partition_info.get("customer"),
+                "season": partition_info.get("season"),
+                "customerValues": partition_info.get("customerValues", []),
+                "seasonValues": partition_info.get("seasonValues", []),
+                "isAmbiguous": partition_info.get("isAmbiguous", False),
+                "sheets": all_sheets,
+                "search_index": workbook_search_index,
+            }
+
+            STATE["imports"].append(workbook_data)
+
+        rebuild_global_search_index()
+
+    finally:
+        cursor.close()
+        conn.close()
+
+def restore_folder_state_from_disk() -> dict[str, Any]:
+    """
+    Quét lại toàn bộ uploads/folder_imports, build lại STATE['folder_index'],
+    rồi remap toàn bộ workbook theo Style No.
+
+    Lưu ý:
+    - folder_id sẽ được tạo mới mỗi lần restore (vì build_folder_index đang dùng uuid mới)
+    - nên bắt buộc phải remap lại __folderId / __detailUrl cho từng row
+    """
+    # 1) reset folder state trong RAM
+    STATE["folder_index"] = {}
+    STATE["folder_root_dir"] = []
+
+    # 2) xóa toàn bộ mapping folder cũ trên các row để tránh link stale
+    for workbook in STATE.get("imports", []):
+        for sheet in workbook.get("sheets", []):
+            for row in sheet.get("rows", []):
+                row["__folderId"] = None
+                row["__folderName"] = None
+                row["__detailUrl"] = None
+
+        workbook["mappedFolderCount"] = 0
+        workbook["folderImportName"] = None
+
+    # 3) nếu chưa có thư mục folder_imports thì thôi
+    if not FOLDER_IMPORT_DIR.exists():
+        return {
+            "rootCount": 0,
+            "folderCount": 0,
+            "mappedCount": 0,
+        }
+
+    # 4) lấy tất cả root folder import đã lưu trên disk
+    saved_roots = [p for p in FOLDER_IMPORT_DIR.iterdir() if p.is_dir()]
+
+    # sắp theo thời gian tạo/sửa gần giống thứ tự import
+    saved_roots.sort(key=lambda p: (p.stat().st_mtime, natural_sort_key(p.name)))
+
+    merged_folder_index: dict[str, dict[str, Any]] = {}
+    restored_roots: list[Path] = []
+
+    # 5) build lại folder index cho từng batch import
+    for saved_root in saved_roots:
+        try:
+            folder_index = build_folder_index(saved_root)
+        except Exception:
+            # bỏ qua batch lỗi, không làm crash toàn app
+            continue
+
+        if not folder_index:
+            continue
+
+        restored_roots.append(saved_root)
+        merged_folder_index.update(folder_index)
+
+    STATE["folder_root_dir"] = restored_roots
+    STATE["folder_index"] = merged_folder_index
+
+    # 6) remap lại toàn bộ workbook theo toàn bộ folder đã restore
+    total_mapped = 0
+    for workbook in STATE.get("imports", []):
+        mapped_count = map_folders_to_rows_by_style_no(workbook, STATE["folder_index"])
+        total_mapped += mapped_count
+
+        # Vì code hiện tại không lưu rootFolderName vào DB,
+        # chỉ có thể set gần đúng theo batch folder cuối cùng
+        if restored_roots:
+            workbook["folderImportName"] = restored_roots[-1].name
+
+    return {
+        "rootCount": len(restored_roots),
+        "folderCount": len(STATE["folder_index"]),
+        "mappedCount": total_mapped,
+    }
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def normalize_cell_value(value: Any) -> Any:
     if isinstance(value, datetime):
@@ -355,6 +703,111 @@ def normalize_cell_value(value: Any) -> Any:
         return int(value)
     return value
 
+
+def normalize_header_key(header: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(header or "").strip().lower())
+
+DB_FIELD_MAPPING: dict[str, str] = {
+    "No": "row_no",
+    "Customer": "customer",
+    "Season": "season",
+    "Staff": "staff",
+    "Style No": "style_no",
+    "Style Name": "style_name",
+    "Product": "product",
+    "Categories": "categories",
+    "Gender": "gender",
+}
+
+EXCEL_HEADER_ALIASES: dict[str, str] = {
+    # STT
+    "no": "No",
+    "stt": "No",
+    "rowno": "No",
+    "number": "No",
+
+    # Customer
+    "customer": "Customer",
+    "customername": "Customer",
+    "customercode": "Customer",
+
+    # Season / Staff
+    "season": "Season",
+    "staff": "Staff",
+
+    # Style
+    "styleno": "Style No",
+    "stylenumber": "Style No",
+    "stylecode": "Style No",
+    "stylename": "Style Name",
+
+    # Product / Category
+    "product": "Product",
+    "category": "Categories",
+    "categories": "Categories",
+
+    # Gender
+    "gender": "Gender",
+    "gendermenwomen": "Gender",
+    "genderwomenmen": "Gender",
+    "gendermw": "Gender",
+
+    # Sketch
+    "sketchdesign": "Sketch Design",
+    "sketch": "Sketch Design",
+}
+
+STANDARD_HEADERS: set[str] = set(DB_FIELD_MAPPING.keys()) | {"Sketch Design"}
+
+
+def normalize_excel_header(header: str) -> str:
+    raw = str(header or "").strip()
+    key = normalize_header_key(raw)
+    return EXCEL_HEADER_ALIASES.get(key, raw)
+
+
+def merge_extra_data_into_row(row_data: dict[str, Any], extra_data: dict[str, Any]) -> None:
+    """
+    Gộp extra_json vào row_data, đồng thời normalize alias cũ về tên chuẩn.
+    Tránh việc Gender Men/Women và Gender cùng xuất hiện.
+    """
+    for raw_key, value in (extra_data or {}).items():
+        canonical_key = normalize_excel_header(raw_key)
+
+        # Nếu extra_json chứa alias của cột chuẩn thì dồn về cột chuẩn
+        if canonical_key in DB_FIELD_MAPPING:
+            if row_data.get(canonical_key) in (None, "", []):
+                row_data[canonical_key] = value
+            continue
+
+        # Sketch Design không render như cột text
+        if canonical_key == "Sketch Design":
+            continue
+
+        row_data[canonical_key] = value
+
+
+def row_has_meaningful_data(row_data: dict[str, Any], headers: list[str]) -> bool:
+    """
+    Chỉ coi row là hợp lệ nếu có dữ liệu ở cột nghiệp vụ.
+    Không tính cột STT / No.
+    """
+    ignored_headers = {"no", "stt"}
+
+    for header in headers:
+        header_key = normalize_header_key(header)
+        if header_key in ignored_headers:
+            continue
+
+        value = row_data.get(header)
+
+        if isinstance(value, str):
+            if value.strip() != "":
+                return True
+        elif value not in (None, "", []):
+            return True
+
+    return False
 
 def detect_header_row(ws, scan_rows: int = 20, scan_cols: int = 50) -> int:
     best_row = 1
@@ -373,7 +826,6 @@ def detect_header_row(ws, scan_rows: int = 20, scan_cols: int = 50) -> int:
             best_row = row_idx
 
     return best_row
-
 
 def natural_sort_key(value: str) -> list[Any]:
     parts = re.split(r"(\d+)", str(value))
@@ -586,88 +1038,23 @@ def clear_all_state() -> None:
     STATE["imports"] = []
     STATE["search_index"] = []
 
-def rebuild_search_index_from_imports() -> None:
-    merged_index: list[dict[str, Any]] = []
-
-    for workbook in STATE.get("imports", []):
-        merged_index.extend(workbook.get("search_index", []))
-
-    STATE["search_index"] = merged_index
-
-
-def cleanup_workbook_storage(workbook: dict[str, Any]) -> None:
-    workbook_id = str(workbook.get("id") or "").strip()
-    if not workbook_id:
-        return
-
-    image_dir = EXCEL_IMAGE_DIR / workbook_id
-    if image_dir.exists():
-        shutil.rmtree(image_dir, ignore_errors=True)
-
-
-def reset_imports_by_customer(customer: str) -> int:
-    customer = str(customer or "").strip()
-    if not customer:
-        return 0
-
-    kept_imports = []
-    removed_imports = []
-
-    for workbook in STATE.get("imports", []):
-        workbook_customer = str(workbook.get("customer") or "").strip()
-        if workbook_customer == customer:
-            removed_imports.append(workbook)
-        else:
-            kept_imports.append(workbook)
-
-    for workbook in removed_imports:
-        cleanup_workbook_storage(workbook)
-
-    STATE["imports"] = kept_imports
-    rebuild_search_index_from_imports()
-
-    return len(removed_imports)
-
-
-def reset_imports_by_customer_and_season(customer: str, season: str) -> int:
-    customer = str(customer or "").strip()
-    season = str(season or "").strip()
-
-    if not customer or not season:
-        return 0
-
-    kept_imports = []
-    removed_imports = []
-
-    for workbook in STATE.get("imports", []):
-        workbook_customer = str(workbook.get("customer") or "").strip()
-        workbook_season = str(workbook.get("season") or "").strip()
-
-        if workbook_customer == customer and workbook_season == season:
-            removed_imports.append(workbook)
-        else:
-            kept_imports.append(workbook)
-
-    for workbook in removed_imports:
-        cleanup_workbook_storage(workbook)
-
-    STATE["imports"] = kept_imports
-    rebuild_search_index_from_imports()
-
-    return len(removed_imports)
-
-
 def get_reset_options() -> dict[str, Any]:
     customer_map: dict[str, set[str]] = {}
 
     for workbook in STATE.get("imports", []):
         customer = str(workbook.get("customer") or "").strip() or "Chưa xác định"
-        season = str(workbook.get("season") or "").strip() or "Chưa xác định"
 
         if customer not in customer_map:
             customer_map[customer] = set()
 
-        customer_map[customer].add(season)
+        season_values = workbook.get("seasonValues") or []
+        if season_values:
+            for season in season_values:
+                season_text = str(season or "").strip() or "Chưa xác định"
+                customer_map[customer].add(season_text)
+        else:
+            season = str(workbook.get("season") or "").strip() or "Chưa xác định"
+            customer_map[customer].add(season)
 
     customers = sorted(customer_map.keys(), key=natural_sort_key)
 
@@ -699,14 +1086,21 @@ def parse_excel_file(file_path: Path) -> dict[str, Any]:
         ws = workbook[sheet_name]
 
         header_row = detect_header_row(ws)
-        headers = []
-        column_indexes = []
+        headers: list[str] = []
+        column_mappings: list[tuple[str, int]] = []
+        seen_headers: set[str] = set()
 
         for col_idx in range(1, ws.max_column + 1):
             header_value = ws.cell(header_row, col_idx).value
-            if header_value not in (None, ""):
-                headers.append(str(header_value).strip())
-                column_indexes.append(col_idx)
+            if header_value in (None, ""):
+                continue
+
+            normalized_header = normalize_excel_header(str(header_value).strip())
+            column_mappings.append((normalized_header, col_idx))
+
+            if normalized_header not in seen_headers:
+                seen_headers.add(normalized_header)
+                headers.append(normalized_header)
 
         if not headers:
             continue
@@ -716,13 +1110,18 @@ def parse_excel_file(file_path: Path) -> dict[str, Any]:
 
         for row_idx in range(header_row + 1, ws.max_row + 1):
             row_data: dict[str, Any] = {}
-            has_value = False
 
-            for header, col_idx in zip(headers, column_indexes):
+            for header, col_idx in column_mappings:
                 cell_value = normalize_cell_value(ws.cell(row_idx, col_idx).value)
-                row_data[header] = cell_value
-                if cell_value not in (None, ""):
-                    has_value = True
+
+                # Nếu nhiều cột Excel cùng map về 1 tên chuẩn,
+                # ưu tiên giữ giá trị có dữ liệu
+                if header not in row_data:
+                    row_data[header] = cell_value
+                else:
+                    old_value = row_data.get(header)
+                    if old_value in (None, "", []) and cell_value not in (None, "", []):
+                        row_data[header] = cell_value
 
             row_images = images_by_row.get(row_idx, [])
             row_data["__images"] = [item["src"] for item in row_images]
@@ -731,10 +1130,12 @@ def parse_excel_file(file_path: Path) -> dict[str, Any]:
             row_data["__folderName"] = None
             row_data["__detailUrl"] = None
 
-            if row_images:
-                has_value = True
+            has_meaningful_data = row_has_meaningful_data(row_data, headers)
 
-            if has_value:
+            if row_images:
+                has_meaningful_data = True
+
+            if has_meaningful_data:
                 rows.append(row_data)
 
                 for image_item in row_images:
@@ -915,6 +1316,409 @@ def safe_resolve_file(base_dir: Path, rel_path: str) -> Path:
     return target
 
 
+def write_audit_log(
+    action_type: str,
+    action_label: str,
+    target_type: str | None = None,
+    target_value: str | None = None,
+    details: dict | None = None,
+) -> None:
+    user = get_current_user()
+    user_id = user["id"] if user else None
+    user_email = user["email"] if user else None
+    ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO audit_logs (
+                user_id, user_email,
+                action_type, action_label,
+                target_type, target_value,
+                details_json, ip_address
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                user_id,
+                user_email,
+                action_type,
+                action_label,
+                target_type,
+                target_value,
+                json.dumps(details, ensure_ascii=False) if details else None,
+                ip_address,
+            ),
+        )
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+def hard_reset_all_data() -> None:
+    """
+    Reset toàn bộ dữ liệu dùng chung của hệ thống:
+    - Xóa DB dữ liệu import
+    - Xóa folder upload trên disk
+    - Xóa state trong RAM
+    Không đụng vào bảng users và audit_logs.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+
+        # Xóa theo thứ tự từ bảng con -> bảng cha
+        cursor.execute("DELETE FROM pattern_row_images")
+        cursor.execute("DELETE FROM pattern_rows")
+        cursor.execute("DELETE FROM excel_sheets")
+        cursor.execute("DELETE FROM excel_imports")
+
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        try:
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        except Exception:
+            pass
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Xóa state runtime
+    clear_all_state()
+
+    # Xóa dữ liệu folder / ảnh đã import trên disk
+    for path_obj in [FOLDER_IMPORT_DIR, EXCEL_IMAGE_DIR]:
+        try:
+            if path_obj.exists():
+                shutil.rmtree(path_obj, ignore_errors=True)
+            path_obj.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # Không làm crash toàn reset nếu lỗi disk nhẹ
+            pass
+
+
+def _reload_shared_state_after_partial_reset() -> None:
+    """
+    Rebuild lại state dùng chung từ DB + folder trên disk.
+    Không xóa folder import trên disk.
+    """
+    STATE["imports"] = []
+    STATE["search_index"] = []
+    STATE["folder_index"] = {}
+    STATE["folder_root_dir"] = []
+
+    restore_state_from_mysql()
+    restore_folder_state_from_disk()
+
+
+def _delete_imports_from_db(import_ids: list[str]) -> int:
+    """
+    Xóa thật các import theo import_id khỏi DB + ảnh Excel trên disk.
+    Trả về số import đã xóa.
+    """
+    import_ids = [str(x).strip() for x in import_ids if str(x).strip()]
+    if not import_ids:
+        return 0
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        placeholders = ", ".join(["%s"] * len(import_ids))
+
+        # Lấy pattern_row ids để xóa ảnh con trước
+        cursor.execute(
+            f"""
+            SELECT id
+            FROM pattern_rows
+            WHERE import_id IN ({placeholders})
+            """,
+            tuple(import_ids),
+        )
+        pattern_row_ids = [row["id"] for row in (cursor.fetchall() or [])]
+
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+
+        if pattern_row_ids:
+            row_placeholders = ", ".join(["%s"] * len(pattern_row_ids))
+            cursor.execute(
+                f"""
+                DELETE FROM pattern_row_images
+                WHERE pattern_row_id IN ({row_placeholders})
+                """,
+                tuple(pattern_row_ids),
+            )
+
+        cursor.execute(
+            f"""
+            DELETE FROM pattern_rows
+            WHERE import_id IN ({placeholders})
+            """,
+            tuple(import_ids),
+        )
+
+        cursor.execute(
+            f"""
+            DELETE FROM excel_sheets
+            WHERE import_id IN ({placeholders})
+            """,
+            tuple(import_ids),
+        )
+
+        cursor.execute(
+            f"""
+            DELETE FROM excel_imports
+            WHERE id IN ({placeholders})
+            """,
+            tuple(import_ids),
+        )
+
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        try:
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        except Exception:
+            pass
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Xóa ảnh Excel trên disk theo từng import
+    for import_id in import_ids:
+        try:
+            image_dir = EXCEL_IMAGE_DIR / import_id
+            if image_dir.exists():
+                shutil.rmtree(image_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+    # Rebuild lại state dùng chung từ DB + folder disk
+    _reload_shared_state_after_partial_reset()
+
+    return len(import_ids)
+
+
+def _hard_reset_rows(
+    row_where_sql: str,
+    row_where_params: tuple[Any, ...],
+    joined_where_sql: str,
+    joined_where_params: tuple[Any, ...],
+) -> dict[str, int]:
+    """
+    Xóa dữ liệu theo từng row trong DB, không xóa theo cấp file/import.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            f"""
+            SELECT COUNT(*) AS row_count
+            FROM pattern_rows
+            WHERE {row_where_sql}
+            """,
+            row_where_params,
+        )
+        removed_row_count = int((cursor.fetchone() or {}).get("row_count") or 0)
+
+        if removed_row_count == 0:
+            return {
+                "removedRowCount": 0,
+                "affectedImportCount": 0,
+                "removedImportCount": 0,
+            }
+
+        cursor.execute(
+            f"""
+            SELECT DISTINCT import_id
+            FROM pattern_rows
+            WHERE {row_where_sql}
+            """,
+            row_where_params,
+        )
+        affected_import_ids = [
+            str(row["import_id"])
+            for row in (cursor.fetchall() or [])
+            if row.get("import_id")
+        ]
+
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+
+        # Xóa ảnh của các row sẽ bị xóa
+        cursor.execute(
+            f"""
+            DELETE pri
+            FROM pattern_row_images pri
+            INNER JOIN pattern_rows pr ON pr.id = pri.pattern_row_id
+            WHERE {joined_where_sql}
+            """,
+            joined_where_params,
+        )
+
+        # Xóa row đúng customer / season
+        cursor.execute(
+            f"""
+            DELETE FROM pattern_rows
+            WHERE {row_where_sql}
+            """,
+            row_where_params,
+        )
+
+        removed_import_ids: list[str] = []
+
+        if affected_import_ids:
+            placeholders = ", ".join(["%s"] * len(affected_import_ids))
+
+            # Xóa sheet rỗng sau khi row đã bị xóa
+            cursor.execute(
+                f"""
+                DELETE es
+                FROM excel_sheets es
+                LEFT JOIN pattern_rows pr ON pr.sheet_id = es.id
+                WHERE es.import_id IN ({placeholders})
+                  AND pr.id IS NULL
+                """,
+                tuple(affected_import_ids),
+            )
+
+            # Cập nhật lại metadata từng import
+            for import_id in affected_import_ids:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) AS total_rows
+                    FROM pattern_rows
+                    WHERE import_id = %s
+                    """,
+                    (import_id,),
+                )
+                total_rows = int((cursor.fetchone() or {}).get("total_rows") or 0)
+
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) AS sheet_count
+                    FROM excel_sheets
+                    WHERE import_id = %s
+                    """,
+                    (import_id,),
+                )
+                sheet_count = int((cursor.fetchone() or {}).get("sheet_count") or 0)
+
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) AS image_index_count
+                    FROM pattern_row_images pri
+                    INNER JOIN pattern_rows pr ON pr.id = pri.pattern_row_id
+                    WHERE pr.import_id = %s
+                    """,
+                    (import_id,),
+                )
+                image_index_count = int((cursor.fetchone() or {}).get("image_index_count") or 0)
+
+                if total_rows <= 0:
+                    removed_import_ids.append(import_id)
+                else:
+                    cursor.execute(
+                        """
+                        UPDATE excel_imports
+                        SET
+                            total_rows = %s,
+                            sheet_count = %s,
+                            image_index_count = %s
+                        WHERE id = %s
+                        """,
+                        (total_rows, sheet_count, image_index_count, import_id),
+                    )
+
+            if removed_import_ids:
+                placeholders_removed = ", ".join(["%s"] * len(removed_import_ids))
+                cursor.execute(
+                    f"""
+                    DELETE FROM excel_imports
+                    WHERE id IN ({placeholders_removed})
+                    """,
+                    tuple(removed_import_ids),
+                )
+
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        try:
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        except Exception:
+            pass
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Nếu import nào đã trống hoàn toàn thì xóa luôn folder ảnh của import đó
+    for import_id in removed_import_ids:
+        try:
+            image_dir = EXCEL_IMAGE_DIR / import_id
+            if image_dir.exists():
+                shutil.rmtree(image_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+    _reload_shared_state_after_partial_reset()
+
+    return {
+        "removedRowCount": removed_row_count,
+        "affectedImportCount": len(affected_import_ids),
+        "removedImportCount": len(removed_import_ids),
+    }
+
+
+def hard_reset_by_customer(customer: str) -> dict[str, int]:
+    customer = str(customer or "").strip()
+    if not customer:
+        return {
+            "removedRowCount": 0,
+            "affectedImportCount": 0,
+            "removedImportCount": 0,
+        }
+
+    return _hard_reset_rows(
+        row_where_sql="customer = %s",
+        row_where_params=(customer,),
+        joined_where_sql="pr.customer = %s",
+        joined_where_params=(customer,),
+    )
+
+
+def hard_reset_by_customer_and_season(customer: str, season: str) -> dict[str, int]:
+    customer = str(customer or "").strip()
+    season = str(season or "").strip()
+
+    if not customer or not season:
+        return {
+            "removedRowCount": 0,
+            "affectedImportCount": 0,
+            "removedImportCount": 0,
+        }
+
+    return _hard_reset_rows(
+        row_where_sql="customer = %s AND season = %s",
+        row_where_params=(customer, season),
+        joined_where_sql="pr.customer = %s AND pr.season = %s",
+        joined_where_params=(customer, season),
+    )
+
+
+
 @app.get("/login")
 def login_page():
     return render_template("login.html")
@@ -990,10 +1794,11 @@ def admin_list_users():
         cursor.execute(
             """
             SELECT
-              id, email, full_name, is_active, is_admin,
-              can_import_excel, can_import_folder, can_search_image,
-              can_view_data, can_reset_data, can_manage_users,
-              created_at
+            id, email, full_name, is_active, is_admin,
+            can_import_excel, can_import_folder, can_search_image,
+            can_view_data, can_reset_data, can_manage_users,
+            can_view_audit_logs,
+            created_at
             FROM users
             ORDER BY created_at DESC, id DESC
             """
@@ -1018,6 +1823,7 @@ def admin_list_users():
                                 "canViewData": bool(user["can_view_data"]),
                                 "canResetData": bool(user["can_reset_data"]),
                                 "canManageUsers": bool(user["can_manage_users"]),
+                                "canViewAuditLogs": bool(user["can_view_audit_logs"]),
                             },
                             "createdAt": str(user["created_at"]),
                         }
@@ -1054,6 +1860,7 @@ def admin_create_user():
     can_manage_users = int(bool(payload.get("can_manage_users", False)))
     is_admin = int(bool(payload.get("is_admin", False)))
     is_active = int(bool(payload.get("is_active", True)))
+    can_view_audit_logs = int(bool(payload.get("can_view_audit_logs", False)))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -1061,11 +1868,12 @@ def admin_create_user():
         cursor.execute(
             """
             INSERT INTO users (
-              email, password_hash, full_name, is_active, is_admin,
-              can_import_excel, can_import_folder, can_search_image,
-              can_view_data, can_reset_data, can_manage_users
+            email, password_hash, full_name, is_active, is_admin,
+            can_import_excel, can_import_folder, can_search_image,
+            can_view_data, can_reset_data, can_manage_users,
+            can_view_audit_logs
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 email,
@@ -1079,6 +1887,7 @@ def admin_create_user():
                 can_view_data,
                 can_reset_data,
                 can_manage_users,
+                can_view_audit_logs,
             ),
         )
         conn.commit()
@@ -1090,7 +1899,6 @@ def admin_create_user():
     finally:
         cursor.close()
         conn.close()
-
 
 @app.put("/api/admin/users/<int:user_id>/permissions")
 @login_required_api
@@ -1105,15 +1913,16 @@ def admin_update_user_permissions(user_id: int):
             """
             UPDATE users
             SET
-              full_name = %s,
-              is_active = %s,
-              is_admin = %s,
-              can_import_excel = %s,
-              can_import_folder = %s,
-              can_search_image = %s,
-              can_view_data = %s,
-              can_reset_data = %s,
-              can_manage_users = %s
+            full_name = %s,
+            is_active = %s,
+            is_admin = %s,
+            can_import_excel = %s,
+            can_import_folder = %s,
+            can_search_image = %s,
+            can_view_data = %s,
+            can_reset_data = %s,
+            can_manage_users = %s,
+            can_view_audit_logs = %s
             WHERE id = %s
             """,
             (
@@ -1126,6 +1935,7 @@ def admin_update_user_permissions(user_id: int):
                 int(bool(payload.get("can_view_data", True))),
                 int(bool(payload.get("can_reset_data", False))),
                 int(bool(payload.get("can_manage_users", False))),
+                int(bool(payload.get("can_view_audit_logs", False))),
                 user_id,
             ),
         )
@@ -1135,7 +1945,6 @@ def admin_update_user_permissions(user_id: int):
     finally:
         cursor.close()
         conn.close()
-
 
 @app.put("/api/admin/users/<int:user_id>/password")
 @login_required_api
@@ -1163,10 +1972,6 @@ def admin_reset_user_password(user_id: int):
         cursor.close()
         conn.close()
 
-@app.route("/")
-def home():
-    return render_template("index.html")
-
 
 @app.get("/media/<path:rel_path>")
 def media_file(rel_path: str):
@@ -1183,7 +1988,6 @@ def folder_detail(folder_id: str):
         abort(404)
 
     return render_template("folder_detail.html", folder=folder)
-
 
 @app.get("/folder-file/<folder_id>/<path:rel_path>")
 def folder_file(folder_id: str, rel_path: str):
@@ -1223,7 +2027,6 @@ def folder_download(folder_id: str):
         download_name=f"{zip_name}.zip",
     )
 
-
 @app.get(f"/folder-download-file/<folder_id>/<path:rel_path>")
 def folder_download_file(folder_id: str, rel_path: str):
     folder = STATE["folder_index"].get(folder_id)
@@ -1239,8 +2042,6 @@ def folder_download_file(folder_id: str, rel_path: str):
         )
     except Exception:
         abort(404)
-
-
 
 @app.post("/api/excel/upload")
 def upload_excel():
@@ -1266,6 +2067,20 @@ def upload_excel():
         if full_workbook:
             save_workbook_to_mysql(full_workbook)
 
+        write_audit_log(
+            action_type="IMPORT_EXCEL",
+            action_label="Import Excel",
+            target_type="excel_file",
+            target_value=uploaded_file.filename,
+            details={
+                "workbook_id": result.get("id"),
+                "file_name": result.get("fileName"),
+                "sheet_count": result.get("sheetCount"),
+                "total_rows": result.get("totalRows"),
+                "image_index_count": result.get("imageIndexCount"),
+            },
+        )
+
         return jsonify({
             "success": True,
             "message": "Import Excel thành công, dữ liệu mới đã được cộng dồn",
@@ -1281,7 +2096,6 @@ def upload_excel():
     finally:
         if file_path.exists():
             file_path.unlink(missing_ok=True)
-
 
 @app.post("/api/folder/import")
 def import_local_folder():
@@ -1346,6 +2160,19 @@ def import_local_folder():
         for workbook_item in STATE.get("imports", []):
             mapped_count += map_folders_to_rows_by_style_no(workbook_item, STATE["folder_index"])
             workbook_item["folderImportName"] = root_folder_name or saved_root.name
+
+        write_audit_log(
+            action_type="IMPORT_FOLDER",
+            action_label="Import Folder",
+            target_type="folder_root",
+            target_value=root_folder_name or saved_root.name,
+            details={
+                "mapped_count": mapped_count,
+                "folder_count": len(new_folder_index),
+                "uploaded_file_count": len(files),
+            },
+        )
+
 
         return jsonify(
             {
@@ -1418,9 +2245,14 @@ def search_by_image():
         return jsonify({"success": False, "message": f"Lỗi xử lý ảnh: {error}"}), 500
 
 
-
 @app.get("/api/state")
 def get_state():
+    if not STATE["imports"]:
+        restore_state_from_mysql()
+
+    if STATE["imports"] and not STATE["folder_index"]:
+        restore_folder_state_from_disk()
+
     imports = get_public_imports_state()
     active_workbook = get_public_workbook_state()
 
@@ -1438,13 +2270,18 @@ def get_state():
         }
     )
 
-
-
-
 @app.post("/api/reset")
 def reset_state():
     try:
-        clear_all_state()
+        hard_reset_all_data()
+
+        write_audit_log(
+            action_type="RESET_ALL",
+            action_label="Reset toàn bộ dữ liệu",
+            target_type="system",
+            target_value="all_data",
+        )
+
         return jsonify(
             {
                 "success": True,
@@ -1466,22 +2303,36 @@ def reset_customer_data():
     if not customer:
         return jsonify({"success": False, "message": "Bạn chưa chọn customer"}), 400
 
-    removed_count = reset_imports_by_customer(customer)
+    reset_result = hard_reset_by_customer(customer)
 
-    if removed_count == 0:
+    if reset_result["removedRowCount"] == 0:
         return jsonify({"success": False, "message": "Không có dữ liệu để reset"}), 404
+
+    write_audit_log(
+        action_type="RESET_CUSTOMER",
+        action_label="Reset theo customer",
+        target_type="customer",
+        target_value=customer,
+        details={
+            "customer": customer,
+            "removed_row_count": reset_result["removedRowCount"],
+            "affected_import_count": reset_result["affectedImportCount"],
+            "removed_import_count": reset_result["removedImportCount"],
+        },
+    )
 
     return jsonify(
         {
             "success": True,
-            "message": f"Đã reset {removed_count} file Excel của customer {customer}",
+            "message": (
+                f"Đã reset {reset_result['removedRowCount']} dòng dữ liệu của customer {customer}"
+            ),
             "data": {
                 "imports": get_public_imports_state(),
                 "resetOptions": get_reset_options(),
             },
         }
     )
-
 
 @app.post("/api/reset/season")
 def reset_customer_season_data():
@@ -1492,15 +2343,31 @@ def reset_customer_season_data():
     if not customer or not season:
         return jsonify({"success": False, "message": "Bạn cần chọn customer và season"}), 400
 
-    removed_count = reset_imports_by_customer_and_season(customer, season)
+    reset_result = hard_reset_by_customer_and_season(customer, season)
 
-    if removed_count == 0:
+    if reset_result["removedRowCount"] == 0:
         return jsonify({"success": False, "message": "Không có dữ liệu để reset"}), 404
+
+    write_audit_log(
+        action_type="RESET_SEASON",
+        action_label="Reset theo customer / season",
+        target_type="customer_season",
+        target_value=f"{customer} / {season}",
+        details={
+            "customer": customer,
+            "season": season,
+            "removed_row_count": reset_result["removedRowCount"],
+            "affected_import_count": reset_result["affectedImportCount"],
+            "removed_import_count": reset_result["removedImportCount"],
+        },
+    )
 
     return jsonify(
         {
             "success": True,
-            "message": f"Đã reset {removed_count} file Excel của {customer} / {season}",
+            "message": (
+                f"Đã reset {reset_result['removedRowCount']} dòng dữ liệu của {customer} / {season}"
+            ),
             "data": {
                 "imports": get_public_imports_state(),
                 "resetOptions": get_reset_options(),
@@ -1509,7 +2376,54 @@ def reset_customer_season_data():
     )
 
 
+@app.get("/api/admin/audit-logs")
+@login_required_api
+@permission_required_api("can_view_audit_logs")
+def admin_audit_logs():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                id,
+                user_id,
+                user_email,
+                action_type,
+                action_label,
+                target_type,
+                target_value,
+                details_json,
+                ip_address,
+                created_at
+            FROM audit_logs
+            ORDER BY created_at DESC, id DESC
+            LIMIT 300
+            """
+        )
+        rows = cursor.fetchall() or []
+
+        return jsonify(
+            {
+                "success": True,
+                "data": {
+                    "logs": rows
+                },
+            }
+        )
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# email = "admin@gmail.com"
+# raw_password = "123456"
+# password_hash = generate_password_hash(raw_password)
+
 if __name__ == "__main__":
+    restore_state_from_mysql()
+    restore_folder_state_from_disk()
     app.run(debug=True)
  
 
