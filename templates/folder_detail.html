@@ -1,132 +1,745 @@
-<!DOCTYPE html>
-<html lang="vi">
+{% extends "base.html" %}
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Folder {{ folder.name }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-</head>
+{% block title %}{{ folder.name }} — Pattern Manual{% endblock %}
 
-<body class="folder-page-body">
-  <div class="folder-page-shell">
-    <div class="folder-page-topbar">
-      <a class="back-link" href="{{ base_path }}/">← Quay lại trang chính</a>
+{% block page_css %}
+<style>
+  /* ─── PAGE SHELL ─────────────────────────────── */
+  .fd-shell {
+    min-height: 100vh;
+    background: var(--bg);
+    padding: 28px 32px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* ─── BREADCRUMB ──────────────────────────────── */
+  .fd-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .fd-breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: opacity 0.15s;
+  }
+
+  .fd-breadcrumb a:hover { opacity: 0.7; }
+
+  .fd-breadcrumb-sep {
+    color: #d1d5db;
+    font-size: 16px;
+  }
+
+  /* ─── HEADER CARD ─────────────────────────────── */
+  .fd-header {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .fd-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .fd-folder-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #f0f2ff, #dbeafe);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--primary);
+  }
+
+  .fd-folder-icon svg { width: 28px; height: 28px; }
+
+  .fd-header-info h1 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    word-break: break-all;
+  }
+
+  .fd-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .fd-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .fd-meta-chip svg { width: 13px; height: 13px; color: #6b7280; }
+
+  .fd-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .fd-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .fd-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .fd-btn-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(70,79,100,0.25);
+  }
+
+  .fd-btn-primary:hover { background: #363d52; color: #fff; }
+
+  .fd-btn-ghost {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1.5px solid #e5e7eb;
+  }
+
+  .fd-btn-ghost:hover { background: #e9ebef; }
+
+  /* ─── SEARCH BAR ──────────────────────────────── */
+  .fd-search-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .fd-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 17px;
+    height: 17px;
+    color: #9ca3af;
+    pointer-events: none;
+  }
+
+  .fd-search-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 40px 0 42px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fafafa;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+
+  .fd-search-input:focus {
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(70,79,100,0.10);
+  }
+
+  .fd-search-input::placeholder { color: #b0b7c3; }
+
+  /* ─── GRID ────────────────────────────────────── */
+  .fd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 280px));
+    gap: 14px;
+    justify-content: center;
+  }
+
+  /* ─── FILE CARD ───────────────────────────────── */
+  .fd-file-card {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1.5px solid #e9ebf0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    cursor: default;
+  }
+
+  .fd-file-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+    border-color: #c8cdd8;
+    transform: translateY(-2px);
+  }
+
+  /* image preview */
+  .fd-thumb-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #f8f9fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: zoom-in;
+    position: relative;
+  }
+
+  .fd-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    padding: 0;
+    transition: transform 0.2s;
+  }
+
+  .fd-thumb-wrap:hover .fd-thumb { transform: scale(1.05); }
+
+  /* non-image icon */
+  .fd-file-icon-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .fd-file-icon-wrap svg { width: 40px; height: 40px; color: #9ca3af; }
+
+  .fd-file-ext-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 5px;
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  .fd-file-ext-badge.pdf { background: #fde8e8; color: #b91c1c; }
+  .fd-file-ext-badge.doc,
+  .fd-file-ext-badge.docx { background: #dbeafe; color: #1d4ed8; }
+  .fd-file-ext-badge.xls,
+  .fd-file-ext-badge.xlsx { background: #d1fae5; color: #065f46; }
+
+  /* card footer */
+  .fd-card-footer {
+    padding: 10px 12px;
+    border-top: 1px solid #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 52px;
+  }
+
+  .fd-card-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+
+  .fd-card-size {
+    font-size: 11px;
+    color: #9ca3af;
+    flex-shrink: 0;
+  }
+
+  .fd-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: #f0f1f5;
+    border: none;
+    color: var(--primary);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .fd-download-btn:hover { background: var(--primary); color: #fff; }
+  .fd-download-btn svg { width: 15px; height: 15px; }
+
+  /* ─── EMPTY STATE ─────────────────────────────── */
+  .fd-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 24px;
+    color: #9ca3af;
+    font-size: 15px;
+  }
+
+  .fd-empty svg { width: 52px; height: 52px; margin: 0 auto 12px; display: block; color: #d1d5db; }
+
+  /* ─── LIGHTBOX ────────────────────────────────── */
+  .fd-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+  }
+
+  .fd-lightbox.hidden { display: none !important; }
+
+  .fd-lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    cursor: default;
+  }
+
+  .fd-lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .fd-lightbox-close:hover { background: rgba(255,255,255,0.3); }
+
+  /* ─── RESPONSIVE ──────────────────────────────── */
+  @media (max-width: 600px) {
+    .fd-shell { padding: 16px; }
+    .fd-header { flex-direction: column; align-items: flex-start; }
+    .fd-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fd-shell">
+
+  <!-- Breadcrumb -->
+  <nav class="fd-breadcrumb">
+    <a href="{{ base_path }}/">
+      <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.8"/>
+        <polyline points="9 22 9 12 15 12 15 22" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+      Pattern Manual
+    </a>
+    <span class="fd-breadcrumb-sep">/</span>
+    <span>Chi tiết folder</span>
+  </nav>
+
+  <!-- Header -->
+  <div class="fd-header">
+    <div class="fd-header-left">
+      <div class="fd-folder-icon">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+            stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="fd-header-info">
+        <h1>{{ folder.name }}</h1>
+        <div class="fd-meta-row">
+          <span class="fd-meta-chip">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke="currentColor" stroke-width="1.8"/>
+              <polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            {{ folder.fileCount }} file
+          </span>
+          {% set image_count = folder.files | selectattr("isImage") | list | length %}
+          {% if image_count > 0 %}
+          <span class="fd-meta-chip">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <polyline points="21 15 16 10 5 21" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+            {{ image_count }} ảnh
+          </span>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    <section class="folder-hero-card">
-      <div class="folder-hero-left">
-        <div class="folder-icon-wrap">📁</div>
+    <div class="fd-header-actions">
+      <a
+        class="fd-btn fd-btn-ghost"
+        href="{{ base_path }}/"
+      >
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Quay lại
+      </a>
 
-        <div class="folder-hero-text">
-          <p class="folder-hero-label">Folder chi tiết</p>
-          <h1>{{ folder.name }}</h1>
-          <p class="folder-hero-subtitle">
-            Xem toàn bộ file bên trong folder.
-          </p>
-        </div>
-      </div>
-
-      <div class="folder-hero-stats">
-        <div class="folder-stat-box">
-          <span>Tổng số file</span>
-          <strong>{{ folder.fileCount }}</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="folder-content-card">
-      {% if folder.files %}
-      <div class="folder-toolbar">
-        <div class="folder-toolbar-title">
-          <h2>Danh sách file</h2>
-          <p>{{ folder.fileCount }} file trong folder này</p>
-        </div>
-
-        <div class="folder-toolbar-actions">
-          <a class="folder-link-btn folder-download-btn" href="{{ base_path }}/folder-download/{{ folder.id }}">
-            Tải folder (.zip)
-          </a>
-        </div>
-      </div>
-
-      <div class="folder-file-grid better-folder-grid">
-        {% for file in folder.files %}
-        <article class="folder-file-card better-folder-card">
-          <div class="folder-file-preview-wrap">
-            {% if file.isImage %}
-            <a href="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}" target="_blank"
-              rel="noopener noreferrer" class="folder-preview-link">
-              <img class="folder-file-preview better-folder-preview"
-                src="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}" alt="{{ file.name }}" />
-            </a>
-            {% elif file.isPdf %}
-            <div class="folder-file-placeholder pdf-placeholder">
-              <span>PDF</span>
-            </div>
-            {% else %}
-            <div class="folder-file-placeholder generic-placeholder">
-              <span>FILE</span>
-            </div>
-            {% endif %}
-          </div>
-
-          <div class="folder-file-info better-folder-info">
-            <div class="folder-file-topline">
-              <span class="file-type-badge
-                    {% if file.isImage %}badge-image{% elif file.isPdf %}badge-pdf{% else %}badge-file{% endif %}">
-                {% if file.isImage %}
-                Ảnh
-                {% elif file.isPdf %}
-                PDF
-                {% else %}
-                Tệp
-                {% endif %}
-              </span>
-
-              <span class="file-size-badge">{{ file.sizeKb }} KB</span>
-            </div>
-
-            <h3 class="folder-file-name better-folder-name" title="{{ file.name }}">
-              {{ file.name }}
-            </h3>
-
-            <div class="folder-file-meta-list">
-              <div class="folder-meta-row">
-                <span class="meta-label">Đường dẫn</span>
-                <span class="meta-value" title="{{ file.relPath }}">{{ file.relPath }}</span>
-              </div>
-
-              <div class="folder-meta-row">
-                <span class="meta-label">Định dạng</span>
-                <span class="meta-value">{{ file.ext or "-" }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="folder-file-actions better-folder-actions">
-            <a class="folder-link-btn" href="{{ url_for('folder_file', folder_id=folder.id, rel_path=file.relPath) }}"
-              target="_blank" rel="noopener noreferrer">
-              Mở file
-            </a>
-
-            <a class="folder-link-btn folder-download-btn"
-              href="{{ base_path }}/folder-download-file/{{ folder.id }}/{{ file.relPath }}">
-              Tải file
-            </a>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="folder-empty-state">
-        <div class="folder-empty-icon">📂</div>
-        <h2>Folder này chưa có file nào</h2>
-        <p>Hãy kiểm tra lại folder bạn import hoặc chọn đúng thư mục con chứa dữ liệu.</p>
-      </div>
-      {% endif %}
-    </section>
+      <a
+        class="fd-btn fd-btn-primary"
+        href="{{ base_path }}/folder-download/{{ folder.id }}"
+        download="{{ folder.name }}.zip"
+      >
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Tải tất cả (.zip)
+      </a>
+    </div>
   </div>
-</body>
 
-</html>
+  <!-- Search -->
+  <div class="fd-search-wrap">
+    <svg class="fd-search-icon" viewBox="0 0 24 24" fill="none">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+      <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <input
+      id="fdSearchInput"
+      type="text"
+      class="fd-search-input"
+      placeholder="Tìm tên file..."
+      autocomplete="off"
+    />
+  </div>
+
+  <!-- File grid -->
+  <div class="fd-grid" id="fdFileGrid">
+    {% for file in folder.files %}
+    <div
+      class="fd-file-card"
+      data-file-name="{{ file.name | lower }}"
+    >
+      {% if file.isImage %}
+        <div class="fd-thumb-wrap" data-preview-url="{{ file.viewUrl }}">
+          <img
+            class="fd-thumb"
+            src="{{ file.viewUrl }}"
+            alt="{{ file.name }}"
+            loading="lazy"
+          />
+        </div>
+      {% else %}
+        <div class="fd-file-icon-wrap {% if file.isPdf %}fmc-pdf-container{% endif %}" {% if file.isPdf %}data-pdf-url="{{ file.viewUrl }}"{% endif %}>
+          {% if file.isPdf %}
+            <canvas class="pdf-canvas" style="display: none;"></canvas>
+            <img class="pdf-thumb-img fd-thumb" style="display: none;" alt="{{ file.name }}" />
+            <div class="pdf-fallback-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.6"/>
+              </svg>
+              <span class="fd-file-ext-badge pdf">PDF</span>
+            </div>
+          {% else %}
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M14 2v6h6M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <span class="fd-file-ext-badge {{ file.ext[1:] if file.ext else '' }}">
+              {{ file.ext[1:].upper() if file.ext else 'FILE' }}
+            </span>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <div class="fd-card-footer">
+        <span class="fd-card-name" title="{{ file.name }}">{{ file.name }}</span>
+        <span class="fd-card-size">{{ file.sizeKb }}KB</span>
+        <a
+          class="fd-download-btn"
+          href="{{ file.downloadUrl }}"
+          title="Tải về {{ file.name }}"
+          download="{{ file.name }}"
+        >
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="fd-empty">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      Folder này chưa có file nào
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- Lightbox -->
+<div class="fd-lightbox hidden" id="fdLightbox">
+  <button class="fd-lightbox-close" id="fdLightboxClose">✕</button>
+  <img id="fdLightboxImg" src="" alt="Preview" />
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script>
+  const fdSearchInput = document.getElementById("fdSearchInput");
+  const fdFileGrid = document.getElementById("fdFileGrid");
+  const fdLightbox = document.getElementById("fdLightbox");
+  const fdLightboxImg = document.getElementById("fdLightboxImg");
+  const fdLightboxClose = document.getElementById("fdLightboxClose");
+
+  // Load PDF thumbnails on start
+  document.addEventListener("DOMContentLoaded", () => {
+    loadPdfThumbnails(fdFileGrid);
+  });
+
+  // Search filter
+  fdSearchInput?.addEventListener("input", () => {
+    const keyword = fdSearchInput.value.trim().toLowerCase();
+    const cards = fdFileGrid.querySelectorAll(".fd-file-card");
+
+    let visibleCount = 0;
+    cards.forEach((card) => {
+      const name = card.dataset.fileName || "";
+      const match = !keyword || name.includes(keyword);
+      card.style.display = match ? "" : "none";
+      if (match) visibleCount++;
+    });
+
+    // Show empty state if no results
+    let emptyMsg = fdFileGrid.querySelector(".fd-empty-search");
+    if (visibleCount === 0 && keyword) {
+      if (!emptyMsg) {
+        emptyMsg = document.createElement("div");
+        emptyMsg.className = "fd-empty fd-empty-search";
+        emptyMsg.textContent = `Không tìm thấy file nào khớp với "${keyword}"`;
+        fdFileGrid.appendChild(emptyMsg);
+      } else {
+        emptyMsg.textContent = `Không tìm thấy file nào khớp với "${keyword}"`;
+        emptyMsg.style.display = "";
+      }
+    } else if (emptyMsg) {
+      emptyMsg.style.display = "none";
+    }
+  });
+
+  // Lightbox
+  fdFileGrid?.addEventListener("click", (e) => {
+    const thumbWrap = e.target.closest(".fd-thumb-wrap");
+    if (!thumbWrap) return;
+
+    const url = thumbWrap.dataset.previewUrl;
+    if (!url) return;
+
+    fdLightboxImg.src = url;
+    fdLightbox.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  });
+
+  function closeLightbox() {
+    fdLightbox.classList.add("hidden");
+    fdLightboxImg.src = "";
+    document.body.style.overflow = "";
+  }
+
+  fdLightboxClose?.addEventListener("click", closeLightbox);
+  fdLightbox?.addEventListener("click", (e) => {
+    if (e.target === fdLightbox) closeLightbox();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeLightbox();
+  });
+
+  // Intercept downloads for Save File Picker
+  fdFileGrid?.addEventListener("click", async (e) => {
+    const dlBtn = e.target.closest(".fd-download-btn");
+    if (!dlBtn) return;
+
+    if (typeof window.showSaveFilePicker === "function") {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = dlBtn.getAttribute("href");
+      const filename = dlBtn.getAttribute("download") || "file";
+      await downloadWithSaveFilePicker(url, filename);
+    }
+  });
+
+  const downloadAllBtn = document.querySelector(".fd-btn-primary[href*='folder-download']");
+  downloadAllBtn?.addEventListener("click", async (e) => {
+    if (typeof window.showSaveFilePicker === "function") {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = downloadAllBtn.getAttribute("href");
+      const filename = downloadAllBtn.getAttribute("download") || "folder.zip";
+      await downloadWithSaveFilePicker(url, filename);
+    }
+  });
+
+  async function downloadWithSaveFilePicker(url, filename) {
+    let fileHandle;
+    try {
+      fileHandle = await window.showSaveFilePicker({
+        suggestedName: filename,
+      });
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      console.warn("showSaveFilePicker failed, falling back to default download:", err);
+      fallbackDownload(url, filename);
+      return;
+    }
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const writable = await fileHandle.createWritable();
+      await response.body.pipeTo(writable);
+    } catch (err) {
+      console.error("Lỗi khi ghi file:", err);
+      alert("Không thể tải file: " + err.message);
+    }
+  }
+
+  function fallbackDownload(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // PDF.js global setup
+  if (window.pdfjsLib) {
+    const basePath = document.body.dataset.basePath || "/PatternManual";
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${basePath}/static/js/pdf.worker.min.js`;
+  }
+
+  // Click on PDF card (excluding the download button) -> open PDF in new tab
+  fdFileGrid?.addEventListener("click", (e) => {
+    const pdfWrap = e.target.closest(".fmc-pdf-container");
+    if (!pdfWrap || e.target.closest(".fd-download-btn")) return;
+    const url = pdfWrap.dataset.pdfUrl;
+    if (!url) return;
+    window.open(url, "_blank");
+  });
+
+  async function loadPdfThumbnails(container) {
+    if (!container || !window.pdfjsLib) return;
+    const pdfWrappers = container.querySelectorAll(".fmc-pdf-container");
+    
+    pdfWrappers.forEach(async (wrapper) => {
+      const pdfUrl = wrapper.dataset.pdfUrl;
+      if (!pdfUrl) return;
+
+      const canvas = wrapper.querySelector(".pdf-canvas");
+      const img = wrapper.querySelector(".pdf-thumb-img");
+      const fallback = wrapper.querySelector(".pdf-fallback-icon");
+      if (!canvas || !img || !fallback) return;
+
+      try {
+        const loadingTask = window.pdfjsLib.getDocument({
+          url: pdfUrl,
+          disableRange: true,
+          disableAutoFetch: true
+        });
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1);
+
+        const desiredWidth = 140; 
+        const viewport = page.getViewport({ scale: 1 });
+        const scale = desiredWidth / viewport.width;
+        const scaledViewport = page.getViewport({ scale: scale });
+
+        canvas.width = scaledViewport.width;
+        canvas.height = scaledViewport.height;
+
+        const context = canvas.getContext("2d");
+        const renderContext = {
+          canvasContext: context,
+          viewport: scaledViewport,
+        };
+
+        await page.render(renderContext).promise;
+
+        img.src = canvas.toDataURL("image/png");
+        
+        // Set styles to fit container beautifully
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        img.style.padding = "0";
+        
+        wrapper.style.cursor = "pointer";
+        wrapper.title = "Click để mở xem PDF";
+        
+        img.style.display = "block";
+        fallback.style.display = "none";
+      } catch (err) {
+        console.error("Failed to render PDF thumbnail:", err);
+      }
+    });
+  }
+</script>
+{% endblock %}

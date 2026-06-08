@@ -1,0 +1,53 @@
+<div class="modal-backdrop hidden" id="folderDetailModal">
+  <div class="modal-box folder-modal-box" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+
+    <div class="folder-modal-header">
+      <div class="folder-modal-header-left">
+        <div class="folder-modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+            <path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor"
+              stroke-width="1.8" stroke-linejoin="round" />
+          </svg>
+        </div>
+
+        <div>
+          <h2 class="folder-modal-title" id="folderModalTitle">Chi tiết folder</h2>
+          <p class="folder-modal-subtitle" id="folderModalMeta"></p>
+        </div>
+      </div>
+
+      <div class="folder-modal-header-actions">
+        <a id="folderDownloadAllBtn" href="#" class="folder-modal-download-all-btn" title="Tải tất cả (.zip)">
+          <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" />
+            <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Tải tất cả (.zip)
+        </a>
+
+        <button type="button" class="modal-close-btn" id="folderModalCloseBtn" aria-label="Đóng">
+          ×
+        </button>
+      </div>
+    </div>
+
+    <div class="folder-modal-search-wrap">
+      <input id="folderModalSearch" type="text" class="folder-modal-search-input" placeholder="Tìm tên file..."
+        autocomplete="off" />
+    </div>
+
+    <div class="folder-modal-body">
+      <div id="folderModalGrid" class="folder-modal-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="fd-lightbox hidden" id="folderFileLightbox">
+  <button class="fd-lightbox-close" id="folderLightboxClose" type="button" aria-label="Đóng">
+    ×
+  </button>
+  <img id="folderLightboxImg" src="" alt="Preview" />
+</div>

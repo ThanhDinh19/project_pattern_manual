@@ -1,0 +1,36 @@
+.paste-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--soft);
+  cursor: pointer;
+  outline: none;
+}
+
+.paste-zone:focus {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+.paste-title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pasted-preview {
+  display: block;
+  margin: 16px auto 0;
+  max-width: 320px;
+  max-height: 260px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.match-results {
+  margin-top: 18px;
+  display: grid;
+  gap: 16px;
+}

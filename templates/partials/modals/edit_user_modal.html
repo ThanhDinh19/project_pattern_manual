@@ -1,0 +1,103 @@
+<div id="editUserModal" class="admin-modal hidden">
+  <div class="admin-modal-backdrop" data-admin-close="edit"></div>
+
+  <div class="admin-modal-card admin-modal-lg admin-edit-modal-card">
+    <div class="admin-modal-header admin-modal-header-clean">
+      <div class="admin-modal-title-wrap">
+        <div class="admin-user-avatar-lg" id="editUserAvatar">U</div>
+        <div>
+          <h3 id="editUserModalTitle">Cập nhật tài khoản</h3>
+          <p id="editUserModalSubTitle">Thông tin người dùng</p>
+        </div>
+      </div>
+
+      <button type="button" class="admin-modal-close" id="editUserModalCloseBtn" title="Đóng">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <input type="hidden" id="editUserId" />
+
+    <div class="admin-edit-layout-v2">
+      <section class="admin-edit-panel">
+        <div class="admin-edit-panel-head">
+          <h4>Thông tin chung</h4>
+          <span class="admin-edit-panel-note">Cập nhật thông tin cơ bản</span>
+        </div>
+
+        <div class="admin-field">
+          <label>Email</label>
+          <input id="editUserEmail" type="text" disabled />
+        </div>
+
+        <div class="admin-field">
+          <label>Họ tên</label>
+          <input id="editFullName" type="text" placeholder="Nhập họ tên" />
+        </div>
+
+        <div class="admin-toggle-grid">
+          <label class="admin-check-item admin-check-item-soft"><input type="checkbox" id="editIsActive" /><span>Đang
+              hoạt động</span></label>
+          <label class="admin-check-item admin-check-item-soft"><input type="checkbox" id="editIsAdmin" /><span>Là
+              admin</span></label>
+        </div>
+      </section>
+
+      <section class="admin-edit-panel admin-edit-panel-wide">
+        <div class="admin-edit-panel-head">
+          <h4>Phân quyền</h4>
+          <span class="admin-edit-panel-note">Bật các chức năng được phép sử dụng</span>
+        </div>
+
+        <div class="admin-perm-grid admin-perm-grid-compact">
+          <label class="admin-check-item"><input type="checkbox" id="editCanImportExcel" /><span>Nhập
+              Excel</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="editCanImportFolder" /><span>Liên kết
+              Folder</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="editCanSearchImage" /><span>Tra cứu
+              ảnh</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="editCanViewData" /><span>Xem dữ liệu</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="editCanResetData" /><span>Làm sạch dữ
+              liệu</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="editCanViewAuditLogs" /><span>Xem lịch sử thao
+              tác</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="editCanManageUsers" /><span>Quản lý tài
+              khoản</span></label>
+        </div>
+      </section>
+
+      <section class="admin-edit-panel">
+        <div class="admin-edit-panel-head">
+          <h4>Đổi mật khẩu</h4>
+          <span class="admin-edit-panel-note">Nhập mật khẩu mới cho tài khoản</span>
+        </div>
+
+        <div class="admin-field">
+          <label>Mật khẩu mới</label>
+          <input id="editNewPassword" type="password" placeholder="Nhập mật khẩu mới" />
+        </div>
+
+        <div class="admin-field" style="margin-top: 12px;">
+          <label>Xác nhận mật khẩu</label>
+          <input id="editConfirmPassword" type="password" placeholder="Nhập lại mật khẩu mới" />
+        </div>
+
+        <button type="button" class="secondary-btn admin-full-btn" id="resetUserPasswordBtn">
+          Đổi mật khẩu
+        </button>
+      </section>
+    </div>
+
+    <div class="admin-edit-footer">
+      <div class="status-text admin-edit-status" id="editUserStatus"></div>
+
+      <div class="admin-modal-actions">
+        <button type="button" class="secondary-btn" id="cancelEditUserBtn">Đóng</button>
+        <button type="button" class="btn" id="saveEditUserBtn">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+</div>

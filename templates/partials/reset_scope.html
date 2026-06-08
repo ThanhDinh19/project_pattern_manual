@@ -1,0 +1,76 @@
+<section class="card feature-panel hidden panel-collapsed reset-card" id="resetScopeCard">
+  <!-- Card Header -->
+  <div class="reset-card-header">
+    <div class="reset-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <path
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <div class="reset-header-info">
+      <h3 class="reset-title">Làm sạch dữ liệu</h3>
+      <p class="reset-subtitle">Lựa chọn phân vùng dữ liệu để reset hoặc thực hiện làm sạch toàn bộ cơ sở dữ liệu.</p>
+    </div>
+  </div>
+
+  <div class="reset-card-body">
+    <!-- Step 1: Selection -->
+    <div class="reset-section">
+      <h4 class="reset-section-title">
+        <span class="step-badge">1</span>
+        Chọn phạm vi dữ liệu
+      </h4>
+      <div class="reset-scope-tools">
+        <div class="custom-select" id="resetCustomerBox">
+          <button type="button" class="custom-select-trigger" id="resetCustomerTrigger">
+            Chọn customer
+          </button>
+          <div class="custom-select-menu hidden" id="resetCustomerMenu"></div>
+        </div>
+
+        <div class="custom-select" id="resetSeasonBox">
+          <button type="button" class="custom-select-trigger" id="resetSeasonTrigger">
+            Chọn season
+          </button>
+          <div class="custom-select-menu hidden" id="resetSeasonMenu"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Actions -->
+    <div class="reset-section">
+      <h4 class="reset-section-title">
+        <span class="step-badge">2</span>
+        Chọn thao tác xử lý
+      </h4>
+      <div class="data-tools reset-actions-group">
+        <button type="button" id="resetSeasonBtn" class="reset-action-btn warning-btn">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" class="btn-svg">
+            <path
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Reset Customer + Season
+        </button>
+
+        <button type="button" id="resetCustomerBtn" class="reset-action-btn danger-btn-premium">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" class="btn-svg">
+            <path
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Reset Toàn Bộ Customer
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Alert / Status -->
+    <div class="reset-status-container">
+      <div class="reset-alert-box info" id="resetAlertBox">
+        <span class="alert-icon">💡</span>
+        <span id="resetScopeStatus" class="status-text">Chọn customer hoặc season để reset dữ liệu.</span>
+      </div>
+    </div>
+  </div>
+</section>
