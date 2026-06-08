@@ -1,0 +1,73 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --primary: #464f64;
+  --primary-soft: #dbeafe;
+  --border: #e5e7eb;
+  --soft: #f8fafc;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.hidden {
+  display: none !important;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover {
+  opacity: 0.92;
+}
+
+.secondary-btn {
+  background: #475569;
+}
+
+.danger-btn {
+  background: #dc2626;
+}
+
+.status-text {
+  margin-top: 14px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.status-text.success {
+  color: #10b981 !important;
+}
+
+.status-text.error {
+  color: #ef4444 !important;
+}
+
+input[type="file"],
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #fff;
+}

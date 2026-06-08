@@ -1,0 +1,4 @@
+.upload-form input[type="file"] {
+  flex: 1;
+  min-width: 260px;
+}

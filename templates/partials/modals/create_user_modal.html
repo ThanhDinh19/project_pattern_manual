@@ -1,0 +1,63 @@
+<div id="createUserModal" class="admin-modal hidden">
+  <div class="admin-modal-backdrop" data-admin-close="create"></div>
+  <div class="admin-modal-card admin-modal-md">
+    <div class="admin-modal-header">
+      <div>
+        <h3>Tạo tài khoản mới</h3>
+        <p>Điền thông tin cơ bản và chọn quyền cần cấp.</p>
+      </div>
+      <button type="button" class="admin-modal-close" id="createUserModalCloseBtn" title="Đóng">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form id="createUserForm" class="admin-modal-form">
+      <div class="admin-form-grid">
+        <div class="admin-field">
+          <label for="createEmail">Email</label>
+          <input id="createEmail" type="email" placeholder="Nhập email" required />
+        </div>
+
+        <div class="admin-field">
+          <label for="createPassword">Mật khẩu</label>
+          <input id="createPassword" type="password" placeholder="Nhập mật khẩu" required />
+        </div>
+
+        <div class="admin-field admin-field-full">
+          <label for="createFullName">Họ tên</label>
+          <input id="createFullName" type="text" placeholder="Nhập họ tên" />
+        </div>
+      </div>
+
+      <div class="admin-perm-section">
+        <div class="admin-perm-title">Quyền chức năng</div>
+        <div class="admin-perm-grid">
+          <label class="admin-check-item"><input type="checkbox" id="permImportExcel" checked /><span>Nhập Excel</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permImportFolder" checked /><span>Liên kết Folder</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permSearchImage" checked /><span>Tra cứu ảnh</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permViewData" checked /><span>Xem dữ liệu</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permResetData" /><span>Làm sạch dữ liệu</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permViewAuditLogs" /><span>Xem lịch sử thao tác</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permManageUsers" /><span>Quản lý tài khoản</span></label>
+        </div>
+      </div>
+
+      <div class="admin-perm-section">
+        <div class="admin-perm-title">Trạng thái</div>
+        <div class="admin-perm-grid admin-perm-grid-2">
+          <label class="admin-check-item"><input type="checkbox" id="permIsAdmin" /><span>Là admin</span></label>
+          <label class="admin-check-item"><input type="checkbox" id="permIsActive" checked /><span>Đang hoạt động</span></label>
+        </div>
+      </div>
+
+      <div class="admin-modal-actions">
+        <button type="button" class="secondary-btn" id="cancelCreateUserBtn">Hủy</button>
+        <button type="submit" class="btn">Tạo tài khoản</button>
+      </div>
+
+      <div class="status-text" id="createUserStatus"></div>
+    </form>
+  </div>
+</div>

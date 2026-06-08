@@ -1,0 +1,34 @@
+<section class="card feature-panel hidden panel-collapsed admin-card-premium" id="adminCard">
+  <!-- Card Header -->
+
+  <div class="admin-grid-head">
+    <div class="admin-grid-tools">
+      <div class="admin-search-wrapper">
+        <svg class="admin-search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+          <path d="M20 20l-3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        <input id="adminUserSearch" type="text" class="admin-grid-search" placeholder="Tìm theo email hoặc họ tên..." />
+      </div>
+
+      <div class="admin-actions">
+        <button type="button" class="admin-reload-btn" id="adminReloadBtn" title="Làm mới danh sách">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink: 0;">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l.73-1.19" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Làm mới
+        </button>
+        <button type="button" class="admin-create-btn" id="openCreateUserModalBtn">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink: 0;">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Tạo tài khoản
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <p id="usersStatus" class="status-text">Đang tải danh sách tài khoản...</p>
+  <div id="usersTableWrap" class="admin-user-grid-wrap"></div>
+</section>

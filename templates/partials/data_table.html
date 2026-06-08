@@ -1,0 +1,33 @@
+<section class="card feature-panel hidden panel-collapsed" id="dataCard">
+
+  <!-- Header -->
+
+
+  <!-- Search bar -->
+  <div class="data-search-bar">
+    <div class="data-search-input-wrap">
+      <input id="excelSearchInput" type="text" class="data-search-input"
+        placeholder="Tìm theo Customer, Staff, Style No, Style Name, Product, Categories..." autocomplete="off" />
+      <button type="button" id="clearExcelSearchBtn" class="data-search-clear" title="Xóa tìm kiếm" hidden>
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-header data-panel-header">
+    <div class="data-panel-title-group">
+      <p id="excelSearchStatus" class="data-panel-subtitle">
+        Nhập từ khóa để lọc dữ liệu theo tất cả cột.
+      </p>
+    </div>
+  </div>
+
+  <!-- Sheet tabs -->
+  <div id="sheetTabs" class="sheet-tabs"></div>
+
+  <!-- Data container -->
+  <div id="excelDataContainer"></div>
+
+</section>

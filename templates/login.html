@@ -1,386 +1,389 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đăng nhập - Pattern Manual</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    :root {
-      --blue: #1976d2;
-      --blue-dark: #0f5fb3;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #dbe2ea;
-      --card: #ffffff;
-      --bg-soft: #f4f6fb;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      min-height: 100vh;
-      background: #eef3f9;
-    }
-
-    .login-page {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .login-brand-side {
-      background: #f8fafc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-brand-wrap {
-      width: 100%;
-      max-width: 620px;
-      text-align: center;
-    }
-
-    .login-brand-logo-box {
-      background: rgba(255, 255, 255, 0.88);
-      border-radius: 5px;
-      padding: 32px 28px;
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-      border: 1px solid rgba(15, 23, 42, 0.06);
-    }
-
-    .login-brand-logo {
-      width: 100%;
-      max-width: 520px;
-      height: auto;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto 24px;
-    }
-
-    .login-brand-title {
-      margin: 0 0 10px;
-      font-size: 36px;
-      font-weight: 800;
-      color: #111827;
-      letter-spacing: -0.02em;
-    }
-
-    .login-brand-subtitle {
-      margin: 0;
-      font-size: 18px;
-      color: #64748b;
-      line-height: 1.6;
-    }
-
-    .login-form-side {
-      background: var(--blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-form-side::before,
-    .login-form-side::after {
-      content: "";
-      position: absolute;
-      border: 1.5px solid rgba(255, 255, 255, 0.35);
-      border-radius: 999px;
-      pointer-events: none;
-    }
-
-    .login-form-side::before {
-      width: 520px;
-      height: 520px;
-      right: -240px;
-      bottom: -240px;
-    }
-
-    .login-form-side::after {
-      width: 660px;
-      height: 660px;
-      right: -320px;
-      bottom: -320px;
-    }
-
-    .login-card {
-      width: 100%;
-      max-width: 430px;
-      background: rgba(255, 255, 255, 0.98);
-      border-radius: 5px;
-      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
-      padding: 36px 34px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .login-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 30px;
-      padding: 0 12px;
-      border-radius: 999px;
-      background: #e8f1ff;
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 14px;
-    }
-
-    .login-card h1 {
-      margin: 0 0 10px;
-      font-size: 40px;
-      line-height: 1.1;
-      color: var(--text);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .login-card p {
-      margin: 0 0 28px;
-      color: var(--muted);
-      font-size: 17px;
-      line-height: 1.5;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #334155;
-    }
-
-    .input-wrap {
-      position: relative;
-    }
-
-    .input-wrap svg {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
-      color: #9ca3af;
-    }
-
-    .input-wrap input {
-      width: 100%;
-      height: 56px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 0 18px 0 48px;
-      font-size: 15px;
-      color: var(--text);
-      background: #fff;
-      transition: 0.2s ease;
-    }
-
-    .input-wrap input:focus {
-      outline: none;
-      border-color: var(--blue);
-      box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.12);
-    }
-
-    .login-submit {
-      width: 100%;
-      height: 56px;
-      border: 0;
-      border-radius: 999px;
-      background: var(--blue);
-      color: #fff;
-      font-size: 17px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: 0.2s ease;
-    }
-
-    .login-submit:hover {
-      background: var(--blue-dark);
-      transform: translateY(-1px);
-    }
-
-    .login-helper {
-      margin-top: 18px;
-      text-align: left;
-      font-size: 14px;
-      color: #64748b;
-    }
-
-    .login-helper a {
-      color: var(--blue);
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .status {
-      margin-top: 14px;
-      color: #dc2626;
-      min-height: 20px;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    @media (max-width: 980px) {
-      .login-page {
-        grid-template-columns: 1fr;
-      }
-
-      .login-brand-side {
-        padding: 24px 20px 8px;
-      }
-
-      .login-form-side {
-        padding: 20px;
-      }
-
-      .login-brand-logo-box {
-        padding: 24px 20px;
-      }
-
-      .login-brand-title {
-        font-size: 28px;
-      }
-
-      .login-card {
-        max-width: 520px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .login-card {
-        padding: 28px 22px;
-        border-radius: 22px;
-      }
-
-      .login-card h1 {
-        font-size: 32px;
-      }
-
-      .login-card p {
-        font-size: 15px;
-      }
-
-      .login-brand-title {
-        font-size: 24px;
-      }
-
-      .login-brand-subtitle {
-        font-size: 15px;
-      }
-    }
-  </style>
-</head>
-<body data-base-path="{{ base_path or '' }}">
-  <div class="login-page">
-    <section class="login-brand-side">
-      <div class="login-brand-wrap">
-        <div class="login-brand-logo-box">
-          <img
-            src="{{ url_for('static', filename='images/vietsun-logo.jpg') }}"
-            alt="VIETSUN"
-            class="login-brand-logo"
-          />
-          <h2 class="login-brand-title">Pattern Manual</h2>
-          <p class="login-brand-subtitle">
-            Hệ thống quản lý dữ liệu mẫu, liên kết folder và tra cứu hình ảnh nội bộ.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="login-form-side">
-      <div class="login-card">
-        <div class="login-badge">Đăng nhập hệ thống</div>
-        <h1>Xin chào!</h1>
-        <p>Vui lòng đăng nhập để tiếp tục sử dụng Pattern Manual.</p>
-
-        <form id="loginForm">
-          <div class="form-group">
-            <label class="label" for="email">Email</label>
-            <div class="input-wrap">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.8" />
-                <path d="m5 7 7 6 7-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <input id="email" type="email" placeholder="Nhập email" required />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="label" for="password">Mật khẩu</label>
-            <div class="input-wrap">
-              <svg viewBox="0 0 24 24" fill="none">
-                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>
-                <path d="M8 10V8a4 4 0 1 1 8 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              </svg>
-              <input id="password" type="password" placeholder="Nhập mật khẩu" required />
-            </div>
-          </div>
-
-          <button type="submit" class="login-submit">Đăng nhập</button>
-          <div class="status" id="loginStatus"></div>
-
-          <div class="login-helper">
-            <a href="javascript:void(0)">Quên mật khẩu?</a>
-          </div>
-        </form>
-      </div>
-    </section>
-  </div>
-
-  <script>
-    const basePath = document.body.dataset.basePath || "";
-    const loginForm = document.getElementById("loginForm");
-    const loginStatus = document.getElementById("loginStatus");
-
-    loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-
-      loginStatus.textContent = "Đang đăng nhập...";
-
-      try {
-        const response = await fetch(`${basePath}/api/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ email, password })
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          loginStatus.textContent = result.message || "Đăng nhập thất bại";
-          return;
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - Pattern Manual</title>
+    <style>
+        * {
+            box-sizing: border-box;
         }
 
-        window.location.href = `${basePath}/`;
-      } catch (error) {
-        console.error(error);
-        loginStatus.textContent = "Có lỗi khi đăng nhập";
-      }
-    });
-  </script>
+        :root {
+            --blue: #1976d2;
+            --blue-dark: #0f5fb3;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #dbe2ea;
+            --card: #ffffff;
+            --bg-soft: #f4f6fb;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: #eef3f9;
+        }
+
+        .login-page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .login-brand-side {
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-brand-wrap {
+            width: 100%;
+            max-width: 620px;
+            text-align: center;
+        }
+
+        .login-brand-logo-box {
+            background: rgba(255, 255, 255, 0.88);
+            border-radius: 5px;
+            padding: 32px 28px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+
+        .login-brand-logo {
+            width: 100%;
+            max-width: 520px;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 24px;
+        }
+
+        .login-brand-title {
+            margin: 0 0 10px;
+            font-size: 36px;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.02em;
+        }
+
+        .login-brand-subtitle {
+            margin: 0;
+            font-size: 18px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .login-form-side {
+            background: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-form-side::before,
+        .login-form-side::after {
+            content: "";
+            position: absolute;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border-radius: 999px;
+            pointer-events: none;
+        }
+
+        .login-form-side::before {
+            width: 520px;
+            height: 520px;
+            right: -240px;
+            bottom: -240px;
+        }
+
+        .login-form-side::after {
+            width: 660px;
+            height: 660px;
+            right: -320px;
+            bottom: -320px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 430px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 5px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+            padding: 36px 34px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            padding: 0 12px;
+            border-radius: 999px;
+            background: #e8f1ff;
+            color: var(--blue);
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .login-card h1 {
+            margin: 0 0 10px;
+            font-size: 40px;
+            line-height: 1.1;
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .login-card p {
+            margin: 0 0 28px;
+            color: var(--muted);
+            font-size: 17px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #9ca3af;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            height: 56px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0 18px 0 48px;
+            font-size: 15px;
+            color: var(--text);
+            background: #fff;
+            transition: 0.2s ease;
+        }
+
+        .input-wrap input:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.12);
+        }
+
+        .login-submit {
+            width: 100%;
+            height: 56px;
+            border: 0;
+            border-radius: 999px;
+            background: var(--blue);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.2s ease;
+        }
+
+        .login-submit:hover {
+            background: var(--blue-dark);
+            transform: translateY(-1px);
+        }
+
+        .login-helper {
+            margin-top: 18px;
+            text-align: left;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .login-helper a {
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .status {
+            margin-top: 14px;
+            color: #dc2626;
+            min-height: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 980px) {
+            .login-page {
+                grid-template-columns: 1fr;
+            }
+
+            .login-brand-side {
+                padding: 24px 20px 8px;
+            }
+
+            .login-form-side {
+                padding: 20px;
+            }
+
+            .login-brand-logo-box {
+                padding: 24px 20px;
+            }
+
+            .login-brand-title {
+                font-size: 28px;
+            }
+
+            .login-card {
+                max-width: 520px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .login-card {
+                padding: 28px 22px;
+                border-radius: 22px;
+            }
+
+            .login-card h1 {
+                font-size: 32px;
+            }
+
+            .login-card p {
+                font-size: 15px;
+            }
+
+            .login-brand-title {
+                font-size: 24px;
+            }
+
+            .login-brand-subtitle {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body data-base-path="{{ base_path or '' }}">
+    <div class="login-page">
+        <section class="login-brand-side">
+            <div class="login-brand-wrap">
+                <div class="login-brand-logo-box">
+                    <img src="{{ url_for('static', filename='images/vietsun-logo.jpg') }}" alt="VIETSUN"
+                        class="login-brand-logo" />
+                    <h2 class="login-brand-title">Pattern Manual</h2>
+                    <p class="login-brand-subtitle">
+                        Hệ thống quản lý dữ liệu mẫu, liên kết folder và tra cứu hình ảnh nội bộ.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="login-form-side">
+            <div class="login-card">
+                <div class="login-badge">Đăng nhập hệ thống</div>
+                <h1>Xin chào!</h1>
+                <p>Vui lòng đăng nhập để tiếp tục sử dụng Pattern Manual.</p>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="label" for="email">Email</label>
+                        <div class="input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.8" />
+                                <path d="m5 7 7 6 7-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input id="email" type="email" placeholder="Nhập email" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label" for="password">Mật khẩu</label>
+                        <div class="input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor"
+                                    stroke-width="1.8" />
+                                <path d="M8 10V8a4 4 0 1 1 8 0v2" stroke="currentColor" stroke-width="1.8"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <input id="password" type="password" placeholder="Nhập mật khẩu" required />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-submit">Đăng nhập</button>
+                    <div class="status" id="loginStatus"></div>
+
+                    <div class="login-helper">
+                        <a href="javascript:void(0)">Quên mật khẩu?</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const basePath = document.body.dataset.basePath || "";
+        const loginForm = document.getElementById("loginForm");
+        const loginStatus = document.getElementById("loginStatus");
+
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+
+            loginStatus.textContent = "Đang đăng nhập...";
+
+            try {
+                const response = await fetch(`${basePath}/api/login`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    loginStatus.textContent = result.message || "Đăng nhập thất bại";
+                    return;
+                }
+
+                window.location.href = `${basePath}/`;
+            } catch (error) {
+                console.error(error);
+                loginStatus.textContent = "Có lỗi khi đăng nhập";
+            }
+        });
+    </script>
 </body>
+
 </html>

@@ -8,6 +8,8 @@ const navResetScopeBtn = document.getElementById("navResetScopeBtn");
 const navAdminBtn = document.getElementById("navAdminBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const currentUserLabel = document.getElementById("currentUserLabel");
+const topNavbarTitle = document.getElementById("topNavbarTitle");
+const topNavbarSubtitle = document.getElementById("topNavbarSubtitle");
 
 const createUserForm = document.getElementById("createUserForm");
 const createUserStatus = document.getElementById("createUserStatus");
@@ -40,6 +42,7 @@ const editCanViewData = document.getElementById("editCanViewData");
 const editCanResetData = document.getElementById("editCanResetData");
 const editCanManageUsers = document.getElementById("editCanManageUsers");
 const editNewPassword = document.getElementById("editNewPassword");
+const editConfirmPassword = document.getElementById("editConfirmPassword");
 const editUserModalTitle = document.getElementById("editUserModalTitle");
 const editUserModalSubTitle = document.getElementById("editUserModalSubTitle");
 
@@ -54,70 +57,70 @@ const editCanViewAuditLogs = document.getElementById("editCanViewAuditLogs");
 const permViewAuditLogs = document.getElementById("permViewAuditLogs");
 
 function formatAuditDate(value) {
-  if (!value) return "-";
+    if (!value) return "-";
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
 
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, "0");
-  const mi = String(date.getMinutes()).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mi = String(date.getMinutes()).padStart(2, "0");
 
-  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
 }
 
 function parseAuditDetails(detailsJson) {
-  if (!detailsJson) return "";
+    if (!detailsJson) return "";
 
-  let details = detailsJson;
+    let details = detailsJson;
 
-  if (typeof detailsJson === "string") {
-    try {
-      details = JSON.parse(detailsJson);
-    } catch {
-      return detailsJson;
+    if (typeof detailsJson === "string") {
+        try {
+            details = JSON.parse(detailsJson);
+        } catch {
+            return detailsJson;
+        }
     }
-  }
 
-  if (typeof details !== "object" || details === null) {
-    return String(details);
-  }
+    if (typeof details !== "object" || details === null) {
+        return String(details);
+    }
 
-  if (details.removed_count) {
-    return `Xóa ${details.removed_count} file Excel`;
-  }
+    if (details.removed_count) {
+        return `Xóa ${details.removed_count} file Excel`;
+    }
 
-  if (details.file_name && details.sheet_count) {
-    return `${details.file_name} / ${details.sheet_count} sheet / ${details.total_rows || 0} dòng`;
-  }
+    if (details.file_name && details.sheet_count) {
+        return `${details.file_name} / ${details.sheet_count} sheet / ${details.total_rows || 0} dòng`;
+    }
 
-  if (details.mapped_count) {
-    return `Map ${details.mapped_count} dòng`;
-  }
+    if (details.mapped_count) {
+        return `Map ${details.mapped_count} dòng`;
+    }
 
-  const parts = Object.entries(details).map(([key, value]) => `${key}: ${value}`);
-  return parts.join(" | ");
+    const parts = Object.entries(details).map(([key, value]) => `${key}: ${value}`);
+    return parts.join(" | ");
 }
 
 function renderAuditLogs(logs) {
-  if (!auditLogsTableBody) return;
+    if (!auditLogsTableBody) return;
 
-  if (!Array.isArray(logs) || logs.length === 0) {
-    auditLogsTableBody.innerHTML = `
+    if (!Array.isArray(logs) || logs.length === 0) {
+        auditLogsTableBody.innerHTML = `
       <tr>
         <td colspan="5" class="admin-history-empty">Chưa có lịch sử thao tác</td>
       </tr>
     `;
-    return;
-  }
+        return;
+    }
 
-  auditLogsTableBody.innerHTML = logs.map((log) => {
-    const target = log.target_value || "-";
-    const detailText = parseAuditDetails(log.details_json);
+    auditLogsTableBody.innerHTML = logs.map((log) => {
+        const target = log.target_value || "-";
+        const detailText = parseAuditDetails(log.details_json);
 
-    return `
+        return `
       <tr>
         <td class="admin-history-time">${escapeHtml(formatAuditDate(log.created_at))}</td>
         <td class="admin-history-user">${escapeHtml(log.user_email || "-")}</td>
@@ -126,95 +129,95 @@ function renderAuditLogs(logs) {
         <td class="admin-history-detail">${escapeHtml(detailText || "-")}</td>
       </tr>
     `;
-  }).join("");
+    }).join("");
 }
 
 async function loadAuditLogs() {
-  if (!auditLogsTableBody) return;
+    if (!auditLogsTableBody) return;
 
-  auditLogsTableBody.innerHTML = `
+    auditLogsTableBody.innerHTML = `
     <tr>
       <td colspan="5" class="admin-history-empty">Đang tải lịch sử thao tác...</td>
     </tr>
   `;
 
-  try {
-    const response = await fetch(`${basePath}/api/admin/audit-logs`);
-    const result = await response.json();
+    try {
+        const response = await fetch(`${basePath}/api/admin/audit-logs`);
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      auditLogsTableBody.innerHTML = `
+        if (!response.ok || !result.success) {
+            auditLogsTableBody.innerHTML = `
         <tr>
           <td colspan="5" class="admin-history-empty">
             ${escapeHtml(result.message || "Không tải được lịch sử thao tác")}
           </td>
         </tr>
       `;
-      return;
-    }
+            return;
+        }
 
-    const logs = Array.isArray(result.data?.logs) ? result.data.logs : [];
-    renderAuditLogs(logs);
-  } catch (error) {
-    console.error(error);
-    auditLogsTableBody.innerHTML = `
+        const logs = Array.isArray(result.data?.logs) ? result.data.logs : [];
+        renderAuditLogs(logs);
+    } catch (error) {
+        console.error(error);
+        auditLogsTableBody.innerHTML = `
       <tr>
         <td colspan="5" class="admin-history-empty">Có lỗi khi tải lịch sử thao tác</td>
       </tr>
     `;
-  }
+    }
 }
 
 reloadAuditLogsBtn?.addEventListener("click", () => {
-  loadAuditLogs();
+    loadAuditLogs();
 });
 
 
 let adminUsersCache = [];
 
 function getUserInitials(user) {
-  const source = (user.fullName || user.email || "U").trim();
-  const words = source.split(/\s+/).filter(Boolean);
+    const source = (user.fullName || user.email || "U").trim();
+    const words = source.split(/\s+/).filter(Boolean);
 
-  if (words.length >= 2) {
-    return `${words[0][0] || ""}${words[1][0] || ""}`.toUpperCase();
-  }
+    if (words.length >= 2) {
+        return `${words[0][0] || ""}${words[1][0] || ""}`.toUpperCase();
+    }
 
-  return source.slice(0, 2).toUpperCase();
+    return source.slice(0, 2).toUpperCase();
 }
 
 function getUserRoleLabel(user) {
-  if (user.isAdmin) return "Admin";
-  if (user.permissions?.canManageUsers) return "Quản lý";
-  if (user.permissions?.canResetData) return "Reset";
-  return "Người dùng";
+    if (user.isAdmin) return "Admin";
+    if (user.permissions?.canManageUsers) return "Quản lý";
+    if (user.permissions?.canResetData) return "Reset";
+    return "Người dùng";
 }
 
 function renderAdminUsers(users) {
-  if (!usersTableWrap) return;
+    if (!usersTableWrap) return;
 
-  if (!users.length) {
-    usersTableWrap.innerHTML = `
+    if (!users.length) {
+        usersTableWrap.innerHTML = `
       <div class="admin-empty-state">Không có tài khoản nào phù hợp.</div>
     `;
-    return;
-  }
+        return;
+    }
 
-  usersTableWrap.innerHTML = `
+    usersTableWrap.innerHTML = `
     <div class="admin-user-grid">
       ${users.map(renderUserGridCard).join("")}
     </div>
   `;
 
-  bindAdminGridActions();
+    bindAdminGridActions();
 }
 
 function renderUserGridCard(user) {
-  const roleLabel = getUserRoleLabel(user);
-  const activeClass = user.isActive ? "green" : "red";
-  const activeText = user.isActive ? "Đang hoạt động" : "Ngưng hoạt động";
+    const roleLabel = getUserRoleLabel(user);
+    const activeText = user.isActive ? "Đang hoạt động" : "Ngưng hoạt động";
+    const roleClass = user.isAdmin ? "admin" : (user.permissions?.canManageUsers ? "manager" : (user.permissions?.canResetData ? "reset" : "user"));
 
-  return `
+    return `
     <article class="admin-user-card" data-user-id="${user.id}">
       <div class="admin-user-card-top">
         <div class="admin-user-avatar">${escapeHtml(getUserInitials(user))}</div>
@@ -223,7 +226,7 @@ function renderUserGridCard(user) {
           <div class="admin-user-name">${escapeHtml(user.fullName || "Chưa có tên")}</div>
 
           <div class="admin-user-role-row">
-            <span class="admin-tag">${escapeHtml(roleLabel)}</span>
+            <span class="admin-tag ${roleClass}">${escapeHtml(roleLabel)}</span>
             ${user.isAdmin ? `<span class="admin-tag gray">Quản trị</span>` : ""}
           </div>
         </div>
@@ -240,113 +243,118 @@ function renderUserGridCard(user) {
 }
 
 function bindAdminGridActions() {
-  document.querySelectorAll(".admin-user-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const userId = Number(card.dataset.userId);
-      const user = adminUsersCache.find((item) => Number(item.id) === userId);
-      if (!user) return;
-      openEditUserModal(user);
+    document.querySelectorAll(".admin-user-card").forEach((card) => {
+        card.addEventListener("click", () => {
+            const userId = Number(card.dataset.userId);
+            const user = adminUsersCache.find((item) => Number(item.id) === userId);
+            if (!user) return;
+            openEditUserModal(user);
+        });
     });
-  });
 }
 
 function openAdminModal(modal) {
-  if (!modal) return;
-  modal.classList.remove("hidden");
-  document.body.classList.add("modal-open");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    document.body.classList.add("modal-open");
 }
 
 function closeAdminModal(modal) {
-  if (!modal) return;
-  modal.classList.add("hidden");
+    if (!modal) return;
+    modal.classList.add("hidden");
 
-  const hasOpenModal = !createUserModal?.classList.contains("hidden") || !editUserModal?.classList.contains("hidden");
-  if (!hasOpenModal) {
-    document.body.classList.remove("modal-open");
-  }
+    const hasOpenModal = !createUserModal?.classList.contains("hidden") || !editUserModal?.classList.contains("hidden");
+    if (!hasOpenModal) {
+        document.body.classList.remove("modal-open");
+    }
 }
 
 function resetCreateUserFormState() {
-  createUserForm?.reset();
-  if (document.getElementById("permImportExcel")) document.getElementById("permImportExcel").checked = true;
-  if (document.getElementById("permImportFolder")) document.getElementById("permImportFolder").checked = true;
-  if (document.getElementById("permSearchImage")) document.getElementById("permSearchImage").checked = true;
-  if (document.getElementById("permViewData")) document.getElementById("permViewData").checked = true;
-  if (document.getElementById("permIsActive")) document.getElementById("permIsActive").checked = true;
-  if (createUserStatus) createUserStatus.textContent = "";
+    createUserForm?.reset();
+    if (document.getElementById("permImportExcel")) document.getElementById("permImportExcel").checked = true;
+    if (document.getElementById("permImportFolder")) document.getElementById("permImportFolder").checked = true;
+    if (document.getElementById("permSearchImage")) document.getElementById("permSearchImage").checked = true;
+    if (document.getElementById("permViewData")) document.getElementById("permViewData").checked = true;
+    if (document.getElementById("permIsActive")) document.getElementById("permIsActive").checked = true;
+    if (createUserStatus) {
+        createUserStatus.textContent = "";
+        createUserStatus.classList.remove("success", "error");
+    }
 }
 
 function openEditUserModal(user) {
-  editUserId.value = user.id;
-  editUserEmail.value = user.email || "";
-  editFullName.value = user.fullName || "";
-  editIsActive.checked = !!user.isActive;
-  editIsAdmin.checked = !!user.isAdmin;
+    editUserId.value = user.id;
+    editUserEmail.value = user.email || "";
+    editFullName.value = user.fullName || "";
+    editIsActive.checked = !!user.isActive;
+    editIsAdmin.checked = !!user.isAdmin;
 
-  editCanImportExcel.checked = !!user.permissions?.canImportExcel;
-  editCanImportFolder.checked = !!user.permissions?.canImportFolder;
-  editCanSearchImage.checked = !!user.permissions?.canSearchImage;
-  editCanViewData.checked = !!user.permissions?.canViewData;
-  editCanResetData.checked = !!user.permissions?.canResetData;
-  editCanManageUsers.checked = !!user.permissions?.canManageUsers;
-  editCanViewAuditLogs.checked = !!user.permissions?.canViewAuditLogs;
+    editCanImportExcel.checked = !!user.permissions?.canImportExcel;
+    editCanImportFolder.checked = !!user.permissions?.canImportFolder;
+    editCanSearchImage.checked = !!user.permissions?.canSearchImage;
+    editCanViewData.checked = !!user.permissions?.canViewData;
+    editCanResetData.checked = !!user.permissions?.canResetData;
+    editCanManageUsers.checked = !!user.permissions?.canManageUsers;
+    editCanViewAuditLogs.checked = !!user.permissions?.canViewAuditLogs;
 
-  editNewPassword.value = "";
-  editUserStatus.textContent = "";
-  editUserModalTitle.textContent = user.fullName || user.email || "Cập nhật tài khoản";
-  editUserModalSubTitle.textContent = user.email || "";
+    editNewPassword.value = "";
+    if (editConfirmPassword) editConfirmPassword.value = "";
+    editUserStatus.textContent = "";
+    editUserStatus.classList.remove("success", "error");
+    editUserModalTitle.textContent = user.fullName || user.email || "Cập nhật tài khoản";
+    editUserModalSubTitle.textContent = user.email || "";
 
-  const editUserAvatar = document.getElementById("editUserAvatar");
-  if (editUserAvatar) {
-    editUserAvatar.textContent = getUserInitials(user);
-  }
+    const editUserAvatar = document.getElementById("editUserAvatar");
+    if (editUserAvatar) {
+        editUserAvatar.textContent = getUserInitials(user);
+    }
 
-  openAdminModal(editUserModal);
+    openAdminModal(editUserModal);
 }
 
 async function loadUsers() {
-  if (!usersTableWrap || !usersStatus) return;
+    if (!usersTableWrap || !usersStatus) return;
 
-  usersStatus.textContent = "Đang tải danh sách tài khoản...";
+    usersStatus.textContent = "Đang tải danh sách tài khoản...";
 
-  try {
-    const response = await fetch(`${basePath}/api/admin/users`);
-    const result = await response.json();
+    try {
+        const response = await fetch(`${basePath}/api/admin/users`);
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      usersStatus.textContent = result.message || "Không tải được danh sách user";
-      return;
+        if (!response.ok || !result.success) {
+            usersStatus.textContent = result.message || "Không tải được danh sách user";
+            return;
+        }
+
+        adminUsersCache = Array.isArray(result.data?.users) ? result.data.users : [];
+        usersStatus.textContent = `Có ${adminUsersCache.length} tài khoản`;
+        renderAdminUsers(adminUsersCache);
+    } catch (error) {
+        console.error(error);
+        usersStatus.textContent = "Có lỗi khi tải danh sách user";
     }
-
-    adminUsersCache = Array.isArray(result.data?.users) ? result.data.users : [];
-    usersStatus.textContent = `Có ${adminUsersCache.length} tài khoản`;
-    renderAdminUsers(adminUsersCache);
-  } catch (error) {
-    console.error(error);
-    usersStatus.textContent = "Có lỗi khi tải danh sách user";
-  }
 }
 
 function filterAdminUsers() {
-  const keyword = String(adminUserSearch?.value || "").trim().toLowerCase();
+    const keyword = String(adminUserSearch?.value || "").trim().toLowerCase();
 
-  if (!keyword) {
-    renderAdminUsers(adminUsersCache);
-    return;
-  }
+    if (!keyword) {
+        renderAdminUsers(adminUsersCache);
+        return;
+    }
 
-  const filtered = adminUsersCache.filter((user) => {
-    const email = String(user.email || "").toLowerCase();
-    const fullName = String(user.fullName || "").toLowerCase();
-    return email.includes(keyword) || fullName.includes(keyword);
-  });
+    const filtered = adminUsersCache.filter((user) => {
+        const email = String(user.email || "").toLowerCase();
+        const fullName = String(user.fullName || "").toLowerCase();
+        return email.includes(keyword) || fullName.includes(keyword);
+    });
 
-  renderAdminUsers(filtered);
+    renderAdminUsers(filtered);
 }
 
 openCreateUserModalBtn?.addEventListener("click", () => {
-  resetCreateUserFormState();
-  openAdminModal(createUserModal);
+    resetCreateUserFormState();
+    openAdminModal(createUserModal);
 });
 
 createUserModalCloseBtn?.addEventListener("click", () => closeAdminModal(createUserModal));
@@ -355,144 +363,176 @@ editUserModalCloseBtn?.addEventListener("click", () => closeAdminModal(editUserM
 cancelEditUserBtn?.addEventListener("click", () => closeAdminModal(editUserModal));
 
 document.addEventListener("click", (event) => {
-  const closeCreate = event.target.closest('[data-admin-close="create"]');
-  const closeEdit = event.target.closest('[data-admin-close="edit"]');
+    const closeCreate = event.target.closest('[data-admin-close="create"]');
+    const closeEdit = event.target.closest('[data-admin-close="edit"]');
 
-  if (closeCreate) closeAdminModal(createUserModal);
-  if (closeEdit) closeAdminModal(editUserModal);
+    if (closeCreate) closeAdminModal(createUserModal);
+    if (closeEdit) closeAdminModal(editUserModal);
 });
 
 adminUserSearch?.addEventListener("input", filterAdminUsers);
 adminReloadBtn?.addEventListener("click", loadUsers);
 
 createUserForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
+    event.preventDefault();
 
-  const payload = {
-    email: document.getElementById("createEmail").value.trim(),
-    password: document.getElementById("createPassword").value,
-    full_name: document.getElementById("createFullName").value.trim(),
-    can_import_excel: document.getElementById("permImportExcel").checked,
-    can_import_folder: document.getElementById("permImportFolder").checked,
-    can_search_image: document.getElementById("permSearchImage").checked,
-    can_view_data: document.getElementById("permViewData").checked,
-    can_reset_data: document.getElementById("permResetData").checked,
-    can_manage_users: document.getElementById("permManageUsers").checked,
-    is_admin: document.getElementById("permIsAdmin").checked,
-    is_active: document.getElementById("permIsActive").checked,
-    can_view_audit_logs: editCanViewAuditLogs.checked
-  };
+    const payload = {
+        email: document.getElementById("createEmail").value.trim(),
+        password: document.getElementById("createPassword").value,
+        full_name: document.getElementById("createFullName").value.trim(),
+        can_import_excel: document.getElementById("permImportExcel").checked,
+        can_import_folder: document.getElementById("permImportFolder").checked,
+        can_search_image: document.getElementById("permSearchImage").checked,
+        can_view_data: document.getElementById("permViewData").checked,
+        can_reset_data: document.getElementById("permResetData").checked,
+        can_manage_users: document.getElementById("permManageUsers").checked,
+        is_admin: document.getElementById("permIsAdmin").checked,
+        is_active: document.getElementById("permIsActive").checked,
+        can_view_audit_logs: editCanViewAuditLogs.checked
+    };
 
-  createUserStatus.textContent = "Đang tạo tài khoản...";
+    createUserStatus.textContent = "Đang tạo tài khoản...";
+    createUserStatus.classList.remove("success", "error");
 
-  try {
-    const response = await fetch(`${basePath}/api/admin/users`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    try {
+        const response = await fetch(`${basePath}/api/admin/users`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      createUserStatus.textContent = result.message || "Tạo tài khoản thất bại";
-      return;
+        if (!response.ok || !result.success) {
+            createUserStatus.textContent = result.message || "Tạo tài khoản thất bại";
+            createUserStatus.classList.add("error");
+            createUserStatus.classList.remove("success");
+            return;
+        }
+
+        createUserStatus.textContent = result.message || "Tạo tài khoản thành công";
+        createUserStatus.classList.add("success");
+        createUserStatus.classList.remove("error");
+        await loadUsers();
+        setTimeout(() => {
+            closeAdminModal(createUserModal);
+            resetCreateUserFormState();
+        }, 500);
+    } catch (error) {
+        console.error(error);
+        createUserStatus.textContent = "Có lỗi khi tạo tài khoản";
+        createUserStatus.classList.add("error");
+        createUserStatus.classList.remove("success");
     }
-
-    createUserStatus.textContent = result.message || "Tạo tài khoản thành công";
-    await loadUsers();
-    setTimeout(() => {
-      closeAdminModal(createUserModal);
-      resetCreateUserFormState();
-    }, 500);
-  } catch (error) {
-    console.error(error);
-    createUserStatus.textContent = "Có lỗi khi tạo tài khoản";
-  }
 });
 
 saveEditUserBtn?.addEventListener("click", async () => {
-  const userId = editUserId.value;
+    const userId = editUserId.value;
 
-  const payload = {
-    full_name: editFullName.value.trim(),
-    is_active: editIsActive.checked,
-    is_admin: editIsAdmin.checked,
-    can_import_excel: editCanImportExcel.checked,
-    can_import_folder: editCanImportFolder.checked,
-    can_search_image: editCanSearchImage.checked,
-    can_view_data: editCanViewData.checked,
-    can_reset_data: editCanResetData.checked,
-    can_manage_users: editCanManageUsers.checked,
-    can_view_audit_logs: editCanViewAuditLogs.checked
-  };
+    const payload = {
+        full_name: editFullName.value.trim(),
+        is_active: editIsActive.checked,
+        is_admin: editIsAdmin.checked,
+        can_import_excel: editCanImportExcel.checked,
+        can_import_folder: editCanImportFolder.checked,
+        can_search_image: editCanSearchImage.checked,
+        can_view_data: editCanViewData.checked,
+        can_reset_data: editCanResetData.checked,
+        can_manage_users: editCanManageUsers.checked,
+        can_view_audit_logs: editCanViewAuditLogs.checked
+    };
 
-  editUserStatus.textContent = "Đang lưu thay đổi...";
+    editUserStatus.textContent = "Đang lưu thay đổi...";
+    editUserStatus.classList.remove("success", "error");
 
-  try {
-    const response = await fetch(`${basePath}/api/admin/users/${userId}/permissions`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    try {
+        const response = await fetch(`${basePath}/api/admin/users/${userId}/permissions`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      editUserStatus.textContent = result.message || "Lưu thay đổi thất bại";
-      return;
+        if (!response.ok || !result.success) {
+            editUserStatus.textContent = result.message || "Lưu thay đổi thất bại";
+            editUserStatus.classList.add("error");
+            editUserStatus.classList.remove("success");
+            return;
+        }
+
+        editUserStatus.textContent = result.message || "Đã cập nhật thành công";
+        editUserStatus.classList.add("success");
+        editUserStatus.classList.remove("error");
+        await loadUsers();
+    } catch (error) {
+        console.error(error);
+        editUserStatus.textContent = "Có lỗi khi cập nhật tài khoản";
+        editUserStatus.classList.add("error");
+        editUserStatus.classList.remove("success");
     }
-
-    editUserStatus.textContent = result.message || "Đã cập nhật thành công";
-    await loadUsers();
-  } catch (error) {
-    console.error(error);
-    editUserStatus.textContent = "Có lỗi khi cập nhật tài khoản";
-  }
 });
 
 resetUserPasswordBtn?.addEventListener("click", async () => {
-  const userId = editUserId.value;
-  const password = editNewPassword.value.trim();
+    const userId = editUserId.value;
+    const password = editNewPassword.value.trim();
+    const confirmPassword = editConfirmPassword ? editConfirmPassword.value.trim() : "";
 
-  if (!password) {
-    editUserStatus.textContent = "Bạn chưa nhập mật khẩu mới";
-    return;
-  }
-
-  editUserStatus.textContent = "Đang đổi mật khẩu...";
-
-  try {
-    const response = await fetch(`${basePath}/api/admin/users/${userId}/password`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      editUserStatus.textContent = result.message || "Đổi mật khẩu thất bại";
-      return;
+    if (!password) {
+        editUserStatus.textContent = "Bạn chưa nhập mật khẩu mới";
+        editUserStatus.classList.add("error");
+        editUserStatus.classList.remove("success");
+        return;
     }
 
-    editUserStatus.textContent = result.message || "Đổi mật khẩu thành công";
-    editNewPassword.value = "";
-  } catch (error) {
-    console.error(error);
-    editUserStatus.textContent = "Có lỗi khi đổi mật khẩu";
-  }
+    if (password !== confirmPassword) {
+        editUserStatus.textContent = "Mật khẩu xác nhận không khớp";
+        editUserStatus.classList.add("error");
+        editUserStatus.classList.remove("success");
+        return;
+    }
+
+    editUserStatus.textContent = "Đang đổi mật khẩu...";
+    editUserStatus.classList.remove("success", "error");
+
+    try {
+        const response = await fetch(`${basePath}/api/admin/users/${userId}/password`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            editUserStatus.textContent = result.message || "Đổi mật khẩu thất bại";
+            editUserStatus.classList.add("error");
+            editUserStatus.classList.remove("success");
+            return;
+        }
+
+        editUserStatus.textContent = result.message || "Đổi mật khẩu thành công";
+        editUserStatus.classList.add("success");
+        editUserStatus.classList.remove("error");
+        editNewPassword.value = "";
+        if (editConfirmPassword) editConfirmPassword.value = "";
+    } catch (error) {
+        console.error(error);
+        editUserStatus.textContent = "Có lỗi khi đổi mật khẩu";
+        editUserStatus.classList.add("error");
+        editUserStatus.classList.remove("success");
+    }
 });
 
 let currentUser = null;
 let currentPermissions = {
-  canImportExcel: false,
-  canImportFolder: false,
-  canSearchImage: false,
-  canViewData: false,
-  canResetData: false,
-  canManageUsers: false,
-  canViewAuditLogs: false,
+    canImportExcel: false,
+    canImportFolder: false,
+    canSearchImage: false,
+    canViewData: false,
+    canResetData: false,
+    canManageUsers: false,
+    canViewAuditLogs: false,
 };
 
 const resetDataBtn = document.getElementById("resetDataBtn");
@@ -536,8 +576,8 @@ const resetSeasonBtn = document.getElementById("resetSeasonBtn");
 const resetScopeStatus = document.getElementById("resetScopeStatus");
 
 let resetOptionsState = {
-  customers: [],
-  seasonsByCustomer: {},
+    customers: [],
+    seasonsByCustomer: {},
 };
 
 const confirmModal = document.getElementById("confirmModal");
@@ -564,66 +604,66 @@ let selectedResetSeason = "";
    FILTER CHO KẾT QUẢ TÌM ẢNH
 ========================= */
 const MATCH_COLUMNS = [
-  {
-    key: "matchedImage",
-    label: "Ảnh",
-    filterable: false,
-    getValue: (item) => item.matchedImage || "",
-  },
-  {
-    key: "styleNo",
-    label: "Style No",
-    filterable: true,
-    getValue: (item) => item.row?.["Style No"] || "",
-  },
-  {
-    key: "styleName",
-    label: "Style Name",
-    filterable: true,
-    getValue: (item) => item.row?.["Style Name"] || "",
-  },
-  {
-    key: "customer",
-    label: "Customer",
-    filterable: true,
-    getValue: (item) => item.row?.["Customer"] || "",
-  },
-  {
-    key: "season",
-    label: "Season",
-    filterable: true,
-    getValue: (item) => item.row?.["Season"] || "",
-  },
-  {
-    key: "staff",
-    label: "Staff",
-    filterable: true,
-    getValue: (item) => item.row?.["Staff"] || "",
-  },
-  {
-    key: "product",
-    label: "Product",
-    filterable: true,
-    getValue: (item) => item.row?.["Product"] || "",
-  },
-  {
-    key: "categories",
-    label: "Categories",
-    filterable: true,
-    getValue: (item) => item.row?.["Categories"] || "",
-  },
-  {
-    key: "folderName",
-    label: "Folder",
-    filterable: true,
-    getValue: (item) => item.folderName || "",
-  },
-  {
-    key: "detail",
-    label: "Chi tiết",
-    filterable: false,
-    getValue: (item) => item.detailUrl || "",
-  },
+    {
+        key: "matchedImage",
+        label: "Ảnh",
+        filterable: false,
+        getValue: (item) => item.matchedImage || "",
+    },
+    {
+        key: "styleNo",
+        label: "Style No",
+        filterable: true,
+        getValue: (item) => item.row?.["Style No"] || "",
+    },
+    {
+        key: "styleName",
+        label: "Style Name",
+        filterable: true,
+        getValue: (item) => item.row?.["Style Name"] || "",
+    },
+    {
+        key: "customer",
+        label: "Customer",
+        filterable: true,
+        getValue: (item) => item.row?.["Customer"] || "",
+    },
+    {
+        key: "season",
+        label: "Season",
+        filterable: true,
+        getValue: (item) => item.row?.["Season"] || "",
+    },
+    {
+        key: "staff",
+        label: "Staff",
+        filterable: true,
+        getValue: (item) => item.row?.["Staff"] || "",
+    },
+    {
+        key: "product",
+        label: "Product",
+        filterable: true,
+        getValue: (item) => item.row?.["Product"] || "",
+    },
+    {
+        key: "categories",
+        label: "Categories",
+        filterable: true,
+        getValue: (item) => item.row?.["Categories"] || "",
+    },
+    {
+        key: "folderName",
+        label: "Folder",
+        filterable: true,
+        getValue: (item) => item.folderName || "",
+    },
+    {
+        key: "detail",
+        label: "Chi tiết",
+        filterable: false,
+        getValue: (item) => item.detailUrl || "",
+    },
 ];
 
 let originalMatchResults = [];
@@ -651,9 +691,9 @@ pasteZone?.addEventListener("paste", handlePasteImage);
 resetDataBtn?.addEventListener("click", handleResetAllData);
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const ok = await loadCurrentUser();
-  if (!ok) return;
-  await restoreStateOnReload();
+    const ok = await loadCurrentUser();
+    if (!ok) return;
+    await restoreStateOnReload();
 });
 
 resetCustomerSelect?.addEventListener("change", handleResetCustomerChange);
@@ -661,117 +701,119 @@ resetCustomerBtn?.addEventListener("click", handleResetCustomerOnly);
 resetSeasonBtn?.addEventListener("click", handleResetCustomerSeason);
 
 navButtons.forEach((button) => {
-  button.addEventListener("click", async () => {
-    const targetId = button.dataset.target;
-    activatePanel(targetId);
+    button.addEventListener("click", async () => {
+        if (button.disabled) return;
 
-    if (targetId === "adminCard" && currentPermissions.canManageUsers) {
-      await loadUsers();
-    }
+        const targetId = button.dataset.target;
+        activatePanel(targetId);
 
-    if (targetId === "auditCard" && currentPermissions.canViewAuditLogs) {
-      await loadAuditLogs();
-    }
-  });
+        if (targetId === "adminCard" && currentPermissions.canManageUsers) {
+            await loadUsers();
+        }
+
+        if (targetId === "auditCard" && currentPermissions.canViewAuditLogs) {
+            await loadAuditLogs();
+        }
+    });
 });
 
 adminUserSearch?.addEventListener("input", () => {
-  const keyword = adminUserSearch.value.trim().toLowerCase();
+    const keyword = adminUserSearch.value.trim().toLowerCase();
 
-  const filtered = adminUsersCache.filter((user) => {
-    const email = String(user.email || "").toLowerCase();
-    const fullName = String(user.fullName || "").toLowerCase();
-    return email.includes(keyword) || fullName.includes(keyword);
-  });
+    const filtered = adminUsersCache.filter((user) => {
+        const email = String(user.email || "").toLowerCase();
+        const fullName = String(user.fullName || "").toLowerCase();
+        return email.includes(keyword) || fullName.includes(keyword);
+    });
 
-  renderAdminUsers(filtered);
+    renderAdminUsers(filtered);
 });
 
 adminReloadBtn?.addEventListener("click", () => {
-  loadUsers();
+    loadUsers();
 });
 
 matchResults?.addEventListener("click", (event) => {
-  const filterBtn = event.target.closest(".filter-trigger");
-  if (!filterBtn) return;
+    const filterBtn = event.target.closest(".filter-trigger");
+    if (!filterBtn) return;
 
-  event.stopPropagation();
+    event.stopPropagation();
 
-  const columnKey = filterBtn.dataset.filterKey;
-  if (!columnKey) return;
+    const columnKey = filterBtn.dataset.filterKey;
+    if (!columnKey) return;
 
-  if (filterMenuState?.columnKey === columnKey) {
-    closeFilterMenu();
-    return;
-  }
+    if (filterMenuState?.columnKey === columnKey) {
+        closeFilterMenu();
+        return;
+    }
 
-  openFilterMenu(columnKey, filterBtn);
+    openFilterMenu(columnKey, filterBtn);
 });
 
 excelDataContainer?.addEventListener("click", (event) => {
-  const filterBtn = event.target.closest(".excel-data-filter-trigger");
-  if (!filterBtn) return;
+    const filterBtn = event.target.closest(".excel-data-filter-trigger");
+    if (!filterBtn) return;
 
-  event.stopPropagation();
+    event.stopPropagation();
 
-  const header = filterBtn.dataset.excelFilterKey;
-  if (!header) return;
+    const header = filterBtn.dataset.excelFilterKey;
+    if (!header) return;
 
-  if (excelFilterMenuState?.header === header) {
-    closeExcelFilterMenu();
-    return;
-  }
+    if (excelFilterMenuState?.header === header) {
+        closeExcelFilterMenu();
+        return;
+    }
 
-  openExcelFilterMenu(header, filterBtn);
+    openExcelFilterMenu(header, filterBtn);
 });
 
 document.addEventListener("click", (event) => {
-  const clickedInsideCustomer = resetCustomerBox?.contains(event.target);
-  const clickedInsideSeason = resetSeasonBox?.contains(event.target);
+    const clickedInsideCustomer = resetCustomerBox?.contains(event.target);
+    const clickedInsideSeason = resetSeasonBox?.contains(event.target);
 
-  if (!clickedInsideCustomer) {
-    resetCustomerBox?.classList.remove("open");
-    resetCustomerMenu?.classList.add("hidden");
-  }
-
-  if (!clickedInsideSeason) {
-    resetSeasonBox?.classList.remove("open");
-    resetSeasonMenu?.classList.add("hidden");
-  }
-
-  if (filterMenuState) {
-    const popup = document.getElementById("excelFilterPopup");
-    const clickedInsidePopup = popup?.contains(event.target);
-    const clickedOnFilterButton = event.target.closest(".filter-trigger");
-
-    if (!clickedInsidePopup && !clickedOnFilterButton) {
-      closeFilterMenu();
+    if (!clickedInsideCustomer) {
+        resetCustomerBox?.classList.remove("open");
+        resetCustomerMenu?.classList.add("hidden");
     }
-  }
 
-  if (excelFilterMenuState) {
-    const popup = document.getElementById("excelDataFilterPopup");
-    const clickedInsidePopup = popup?.contains(event.target);
-    const clickedOnFilterButton = event.target.closest(".excel-data-filter-trigger");
-
-    if (!clickedInsidePopup && !clickedOnFilterButton) {
-      closeExcelFilterMenu();
+    if (!clickedInsideSeason) {
+        resetSeasonBox?.classList.remove("open");
+        resetSeasonMenu?.classList.add("hidden");
     }
-  }
+
+    if (filterMenuState) {
+        const popup = document.getElementById("excelFilterPopup");
+        const clickedInsidePopup = popup?.contains(event.target);
+        const clickedOnFilterButton = event.target.closest(".filter-trigger");
+
+        if (!clickedInsidePopup && !clickedOnFilterButton) {
+            closeFilterMenu();
+        }
+    }
+
+    if (excelFilterMenuState) {
+        const popup = document.getElementById("excelDataFilterPopup");
+        const clickedInsidePopup = popup?.contains(event.target);
+        const clickedOnFilterButton = event.target.closest(".excel-data-filter-trigger");
+
+        if (!clickedInsidePopup && !clickedOnFilterButton) {
+            closeExcelFilterMenu();
+        }
+    }
 });
 
 window.addEventListener("resize", () => {
-  if (filterMenuState) positionFilterPopup();
-  if (excelFilterMenuState) positionExcelFilterPopup();
+    if (filterMenuState) positionFilterPopup();
+    if (excelFilterMenuState) positionExcelFilterPopup();
 });
 
 window.addEventListener(
-  "scroll",
-  () => {
-    if (filterMenuState) positionFilterPopup();
-    if (excelFilterMenuState) positionExcelFilterPopup();
-  },
-  true
+    "scroll",
+    () => {
+        if (filterMenuState) positionFilterPopup();
+        if (excelFilterMenuState) positionExcelFilterPopup();
+    },
+    true
 );
 
 confirmModalOkBtn?.addEventListener("click", () => closeConfirmModal(true));
@@ -779,134 +821,134 @@ confirmModalCancelBtn?.addEventListener("click", () => closeConfirmModal(false))
 confirmModalCloseBtn?.addEventListener("click", () => closeConfirmModal(false));
 
 confirmModal?.addEventListener("click", (event) => {
-  const backdrop = event.target.closest('[data-confirm-close="backdrop"]');
-  if (backdrop) {
-    closeConfirmModal(false);
-  }
+    const backdrop = event.target.closest('[data-confirm-close="backdrop"]');
+    if (backdrop) {
+        closeConfirmModal(false);
+    }
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && confirmModal && !confirmModal.classList.contains("hidden")) {
-    closeConfirmModal(false);
-  }
+    if (event.key === "Escape" && confirmModal && !confirmModal.classList.contains("hidden")) {
+        closeConfirmModal(false);
+    }
 });
 
 document.addEventListener("click", (e) => {
-  const img = e.target.closest(".previewable-image");
-  if (!img) return;
+    const img = e.target.closest(".previewable-image");
+    if (!img) return;
 
-  const lightbox = document.getElementById("imageLightbox");
-  const lightboxImg = lightbox?.querySelector(".lightbox-img");
-  if (!lightbox || !lightboxImg) return;
+    const lightbox = document.getElementById("imageLightbox");
+    const lightboxImg = lightbox?.querySelector(".lightbox-img");
+    if (!lightbox || !lightboxImg) return;
 
-  lightboxImg.src = img.src;
-  lightbox.classList.remove("hidden");
+    lightboxImg.src = img.src;
+    lightbox.classList.remove("hidden");
 });
 
 document.addEventListener("click", (e) => {
-  const lightbox = document.getElementById("imageLightbox");
-  if (!lightbox || lightbox.classList.contains("hidden")) return;
+    const lightbox = document.getElementById("imageLightbox");
+    if (!lightbox || lightbox.classList.contains("hidden")) return;
 
-  if (
-    e.target.classList.contains("lightbox") ||
-    e.target.classList.contains("lightbox-close")
-  ) {
-    lightbox.classList.add("hidden");
-  }
+    if (
+        e.target.classList.contains("lightbox") ||
+        e.target.classList.contains("lightbox-close")
+    ) {
+        lightbox.classList.add("hidden");
+    }
 });
 
 logoutBtn?.addEventListener("click", handleLogout);
 
 resetCustomerTrigger?.addEventListener("click", () => {
-  resetCustomerBox?.classList.toggle("open");
-  resetCustomerMenu?.classList.toggle("hidden");
-  resetSeasonBox?.classList.remove("open");
-  resetSeasonMenu?.classList.add("hidden");
+    resetCustomerBox?.classList.toggle("open");
+    resetCustomerMenu?.classList.toggle("hidden");
+    resetSeasonBox?.classList.remove("open");
+    resetSeasonMenu?.classList.add("hidden");
 });
 
 resetSeasonTrigger?.addEventListener("click", () => {
-  if (!selectedResetCustomer) return;
-  resetSeasonBox?.classList.toggle("open");
-  resetSeasonMenu?.classList.toggle("hidden");
-  resetCustomerBox?.classList.remove("open");
-  resetCustomerMenu?.classList.add("hidden");
+    if (!selectedResetCustomer) return;
+    resetSeasonBox?.classList.toggle("open");
+    resetSeasonMenu?.classList.toggle("hidden");
+    resetCustomerBox?.classList.remove("open");
+    resetCustomerMenu?.classList.add("hidden");
 });
 
 resetCustomerMenu?.addEventListener("click", (event) => {
-  const option = event.target.closest("[data-reset-customer]");
-  if (!option) return;
+    const option = event.target.closest("[data-reset-customer]");
+    if (!option) return;
 
-  selectedResetCustomer = option.dataset.resetCustomer || "";
-  selectedResetSeason = "";
+    selectedResetCustomer = option.dataset.resetCustomer || "";
+    selectedResetSeason = "";
 
-  renderResetCustomerOptions();
-  handleResetCustomerChange();
+    renderResetCustomerOptions();
+    handleResetCustomerChange();
 
-  resetCustomerBox?.classList.remove("open");
-  resetCustomerMenu?.classList.add("hidden");
+    resetCustomerBox?.classList.remove("open");
+    resetCustomerMenu?.classList.add("hidden");
 });
 
 resetSeasonMenu?.addEventListener("click", (event) => {
-  const option = event.target.closest("[data-reset-season]");
-  if (!option) return;
+    const option = event.target.closest("[data-reset-season]");
+    if (!option) return;
 
-  selectedResetSeason = option.dataset.resetSeason || "";
-  renderResetSeasonOptions(selectedResetCustomer);
+    selectedResetSeason = option.dataset.resetSeason || "";
+    renderResetSeasonOptions(selectedResetCustomer);
 
-  resetSeasonBox?.classList.remove("open");
-  resetSeasonMenu?.classList.add("hidden");
+    resetSeasonBox?.classList.remove("open");
+    resetSeasonMenu?.classList.add("hidden");
 });
 
 createUserForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
+    event.preventDefault();
 
-  const payload = {
-    email: document.getElementById("createEmail").value.trim(),
-    password: document.getElementById("createPassword").value,
-    full_name: document.getElementById("createFullName").value.trim(),
-    can_import_excel: document.getElementById("permImportExcel").checked,
-    can_import_folder: document.getElementById("permImportFolder").checked,
-    can_search_image: document.getElementById("permSearchImage").checked,
-    can_view_data: document.getElementById("permViewData").checked,
-    can_reset_data: document.getElementById("permResetData").checked,
-    can_manage_users: document.getElementById("permManageUsers").checked,
-    is_admin: document.getElementById("permIsAdmin").checked,
-    is_active: document.getElementById("permIsActive").checked,
-    can_view_audit_logs: document.getElementById("permViewAuditLogs").checked,
-  };
+    const payload = {
+        email: document.getElementById("createEmail").value.trim(),
+        password: document.getElementById("createPassword").value,
+        full_name: document.getElementById("createFullName").value.trim(),
+        can_import_excel: document.getElementById("permImportExcel").checked,
+        can_import_folder: document.getElementById("permImportFolder").checked,
+        can_search_image: document.getElementById("permSearchImage").checked,
+        can_view_data: document.getElementById("permViewData").checked,
+        can_reset_data: document.getElementById("permResetData").checked,
+        can_manage_users: document.getElementById("permManageUsers").checked,
+        is_admin: document.getElementById("permIsAdmin").checked,
+        is_active: document.getElementById("permIsActive").checked,
+        can_view_audit_logs: document.getElementById("permViewAuditLogs").checked,
+    };
 
-  createUserStatus.textContent = "Đang tạo tài khoản...";
+    createUserStatus.textContent = "Đang tạo tài khoản...";
 
-  try {
-    const response = await fetch(`${basePath}/api/admin/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+        const response = await fetch(`${basePath}/api/admin/users`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      createUserStatus.textContent = result.message || "Tạo tài khoản thất bại";
-      return;
+        if (!response.ok || !result.success) {
+            createUserStatus.textContent = result.message || "Tạo tài khoản thất bại";
+            return;
+        }
+
+        createUserStatus.textContent = result.message || "Tạo tài khoản thành công";
+        createUserForm.reset();
+
+        document.getElementById("permImportExcel").checked = true;
+        document.getElementById("permImportFolder").checked = true;
+        document.getElementById("permSearchImage").checked = true;
+        document.getElementById("permViewData").checked = true;
+        document.getElementById("permIsActive").checked = true;
+
+        await loadUsers();
+    } catch (error) {
+        console.error(error);
+        createUserStatus.textContent = "Có lỗi khi tạo tài khoản";
     }
-
-    createUserStatus.textContent = result.message || "Tạo tài khoản thành công";
-    createUserForm.reset();
-
-    document.getElementById("permImportExcel").checked = true;
-    document.getElementById("permImportFolder").checked = true;
-    document.getElementById("permSearchImage").checked = true;
-    document.getElementById("permViewData").checked = true;
-    document.getElementById("permIsActive").checked = true;
-
-    await loadUsers();
-  } catch (error) {
-    console.error(error);
-    createUserStatus.textContent = "Có lỗi khi tạo tài khoản";
-  }
 });
 
 updateSidebarAvailability();
@@ -916,60 +958,60 @@ activatePanel("uploadCard");
    CORE
 ========================= */
 function updateResetTabAvailability() {
-  if (!resetScopeCard) return;
+    if (!resetScopeCard) return;
 
-  if (workbookList.length > 0 && currentPermissions.canResetData) {
-    resetScopeCard.classList.remove("hidden");
-  } else {
-    resetScopeCard.classList.add("hidden");
-  }
+    if (workbookList.length > 0 && currentPermissions.canResetData) {
+        resetScopeCard.classList.remove("hidden");
+    } else {
+        resetScopeCard.classList.add("hidden");
+    }
 
-  updateSidebarAvailability();
+    updateSidebarAvailability();
 }
 
 async function loadCurrentUser() {
-  try {
-    const response = await fetch(`${basePath}/api/me`);
-    const result = await response.json();
+    try {
+        const response = await fetch(`${basePath}/api/me`);
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      window.location.href = `${basePath}/login`;
-      return false;
+        if (!response.ok || !result.success) {
+            window.location.href = `${basePath}/login`;
+            return false;
+        }
+
+        currentUser = result.data;
+        currentPermissions = result.data.permissions || currentPermissions;
+
+        if (currentUserLabel) {
+            currentUserLabel.textContent = currentUser.email || "";
+        }
+
+        const sidebarUserAvatar = document.getElementById("sidebarUserAvatar");
+        if (sidebarUserAvatar && currentUser?.email) {
+            sidebarUserAvatar.textContent = currentUser.email.trim().charAt(0).toUpperCase();
+        }
+
+        applyPermissionsToUI();
+        return true;
+    } catch (error) {
+        console.error(error);
+        window.location.href = `${basePath}/login`;
+        return false;
     }
-
-    currentUser = result.data;
-    currentPermissions = result.data.permissions || currentPermissions;
-
-    if (currentUserLabel) {
-      currentUserLabel.textContent = currentUser.email || "";
-    }
-
-    const sidebarUserAvatar = document.getElementById("sidebarUserAvatar");
-    if (sidebarUserAvatar && currentUser?.email) {
-      sidebarUserAvatar.textContent = currentUser.email.trim().charAt(0).toUpperCase();
-    }
-
-    applyPermissionsToUI();
-    return true;
-  } catch (error) {
-    console.error(error);
-    window.location.href = `${basePath}/login`;
-    return false;
-  }
 }
 
 
 function renderUserCard(user) {
-  const displayName = user.fullName || "Chưa có tên";
-  const activeBadge = user.isActive
-    ? `<span class="admin-badge green">Đang hoạt động</span>`
-    : `<span class="admin-badge red">Ngưng hoạt động</span>`;
+    const displayName = user.fullName || "Chưa có tên";
+    const activeBadge = user.isActive
+        ? `<span class="admin-badge green">Đang hoạt động</span>`
+        : `<span class="admin-badge red">Ngưng hoạt động</span>`;
 
-  const adminBadge = user.isAdmin
-    ? `<span class="admin-badge">Admin</span>`
-    : `<span class="admin-badge gray">User</span>`;
+    const adminBadge = user.isAdmin
+        ? `<span class="admin-badge">Admin</span>`
+        : `<span class="admin-badge gray">User</span>`;
 
-  return `
+    return `
     <details class="admin-user-item" data-user-id="${user.id}">
       <summary class="admin-user-summary">
         <div class="admin-user-main">
@@ -1069,176 +1111,176 @@ function renderUserCard(user) {
 }
 
 function bindUserActions() {
-  document.querySelectorAll(".btn-save-user").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const row = btn.closest("[data-user-id]");
-      if (!row) return;
+    document.querySelectorAll(".btn-save-user").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const row = btn.closest("[data-user-id]");
+            if (!row) return;
 
-      const userId = row.dataset.userId;
+            const userId = row.dataset.userId;
 
-      const payload = {
-        full_name: row.querySelector(".input-full-name").value.trim(),
-        is_active: row.querySelector(".input-active").checked,
-        is_admin: row.querySelector(".input-admin").checked,
-        can_import_excel: row.querySelector(".perm-import-excel").checked,
-        can_import_folder: row.querySelector(".perm-import-folder").checked,
-        can_search_image: row.querySelector(".perm-search-image").checked,
-        can_view_data: row.querySelector(".perm-view-data").checked,
-        can_reset_data: row.querySelector(".perm-reset-data").checked,
-        can_manage_users: row.querySelector(".perm-manage-users").checked,
-        can_view_audit_logs: editCanViewAuditLogs.checked
-      };
+            const payload = {
+                full_name: row.querySelector(".input-full-name").value.trim(),
+                is_active: row.querySelector(".input-active").checked,
+                is_admin: row.querySelector(".input-admin").checked,
+                can_import_excel: row.querySelector(".perm-import-excel").checked,
+                can_import_folder: row.querySelector(".perm-import-folder").checked,
+                can_search_image: row.querySelector(".perm-search-image").checked,
+                can_view_data: row.querySelector(".perm-view-data").checked,
+                can_reset_data: row.querySelector(".perm-reset-data").checked,
+                can_manage_users: row.querySelector(".perm-manage-users").checked,
+                can_view_audit_logs: editCanViewAuditLogs.checked
+            };
 
-      try {
-        const response = await fetch(`${basePath}/api/admin/users/${userId}/permissions`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+            try {
+                const response = await fetch(`${basePath}/api/admin/users/${userId}/permissions`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+                alert(result.message || "Đã lưu");
+
+                if (response.ok && result.success) {
+                    await loadUsers();
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Có lỗi khi cập nhật quyền");
+            }
         });
-
-        const result = await response.json();
-        alert(result.message || "Đã lưu");
-
-        if (response.ok && result.success) {
-          await loadUsers();
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Có lỗi khi cập nhật quyền");
-      }
     });
-  });
 
-  document.querySelectorAll(".btn-reset-password").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const row = btn.closest("[data-user-id]");
-      if (!row) return;
+    document.querySelectorAll(".btn-reset-password").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const row = btn.closest("[data-user-id]");
+            if (!row) return;
 
-      const userId = row.dataset.userId;
-      const password = row.querySelector(".input-new-password").value.trim();
+            const userId = row.dataset.userId;
+            const password = row.querySelector(".input-new-password").value.trim();
 
-      if (!password) {
-        alert("Nhập mật khẩu mới");
-        return;
-      }
+            if (!password) {
+                alert("Nhập mật khẩu mới");
+                return;
+            }
 
-      try {
-        const response = await fetch(`${basePath}/api/admin/users/${userId}/password`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
+            try {
+                const response = await fetch(`${basePath}/api/admin/users/${userId}/password`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password }),
+                });
+
+                const result = await response.json();
+                alert(result.message || "Đã đổi mật khẩu");
+
+                if (response.ok && result.success) {
+                    row.querySelector(".input-new-password").value = "";
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Có lỗi khi đổi mật khẩu");
+            }
         });
-
-        const result = await response.json();
-        alert(result.message || "Đã đổi mật khẩu");
-
-        if (response.ok && result.success) {
-          row.querySelector(".input-new-password").value = "";
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Có lỗi khi đổi mật khẩu");
-      }
     });
-  });
 }
 
 function applyPermissionsToUI() {
-  navExcelBtn?.classList.toggle("hidden", !currentPermissions.canImportExcel);
-  navFolderBtn?.classList.toggle("hidden", !currentPermissions.canImportFolder);
-  navImageBtn?.classList.toggle("hidden", !currentPermissions.canSearchImage);
-  navDataBtn?.classList.toggle("hidden", !currentPermissions.canViewData);
-  navResetScopeBtn?.classList.toggle("hidden", !currentPermissions.canResetData);
-  navAdminBtn?.classList.toggle("hidden", !currentPermissions.canManageUsers);
-  navAuditBtn?.classList.toggle("hidden", !currentPermissions.canViewAuditLogs);
+    navExcelBtn?.classList.toggle("hidden", !currentPermissions.canImportExcel);
+    navFolderBtn?.classList.toggle("hidden", !currentPermissions.canImportFolder);
+    navImageBtn?.classList.toggle("hidden", !currentPermissions.canSearchImage);
+    navDataBtn?.classList.toggle("hidden", !currentPermissions.canViewData);
+    navResetScopeBtn?.classList.toggle("hidden", !currentPermissions.canResetData);
+    navAdminBtn?.classList.toggle("hidden", !currentPermissions.canManageUsers);
+    navAuditBtn?.classList.toggle("hidden", !currentPermissions.canViewAuditLogs);
 
-  if (resetScopeCard) {
-    resetScopeCard.classList.toggle("hidden", !currentPermissions.canResetData);
-  }
+    if (resetScopeCard) {
+        resetScopeCard.classList.toggle("hidden", !currentPermissions.canResetData);
+    }
 
-  if (auditCard) {
-    auditCard.classList.toggle("hidden", !currentPermissions.canViewAuditLogs);
-  }
+    if (auditCard) {
+        auditCard.classList.toggle("hidden", !currentPermissions.canViewAuditLogs);
+    }
 
-  if (adminCard) {
-    adminCard.classList.toggle("hidden", !currentPermissions.canManageUsers);
-  }
+    if (adminCard) {
+        adminCard.classList.toggle("hidden", !currentPermissions.canManageUsers);
+    }
 
-  updateSidebarAvailability();
+    updateSidebarAvailability();
 }
 
 async function handleLogout() {
-  try {
-    await fetch(`${basePath}/api/logout`, { method: "POST" });
-  } catch (error) {
-    console.error(error);
-  }
-  window.location.href = `${basePath}/login`;
+    try {
+        await fetch(`${basePath}/api/logout`, { method: "POST" });
+    } catch (error) {
+        console.error(error);
+    }
+    window.location.href = `${basePath}/login`;
 }
 
 function closeConfirmModal(result = false) {
-  if (!confirmModal) return;
+    if (!confirmModal) return;
 
-  confirmModal.classList.add("hidden");
-  document.body.classList.remove("modal-open");
+    confirmModal.classList.add("hidden");
+    document.body.classList.remove("modal-open");
 
-  if (typeof confirmDialogResolver === "function") {
-    confirmDialogResolver(result);
-    confirmDialogResolver = null;
-  }
+    if (typeof confirmDialogResolver === "function") {
+        confirmDialogResolver(result);
+        confirmDialogResolver = null;
+    }
 }
 
 function showConfirmDialog({
-  title = "Xác nhận thao tác",
-  message = "Bạn có chắc muốn thực hiện thao tác này không?",
-  confirmText = "Xác nhận",
-  cancelText = "Hủy",
+    title = "Xác nhận thao tác",
+    message = "Bạn có chắc muốn thực hiện thao tác này không?",
+    confirmText = "Xác nhận",
+    cancelText = "Hủy",
 } = {}) {
-  if (!confirmModal) {
-    return Promise.resolve(window.confirm(message));
-  }
+    if (!confirmModal) {
+        return Promise.resolve(window.confirm(message));
+    }
 
-  confirmModalTitle.textContent = title;
-  confirmModalMessage.textContent = message;
-  confirmModalOkBtn.textContent = confirmText;
-  confirmModalCancelBtn.textContent = cancelText;
+    confirmModalTitle.textContent = title;
+    confirmModalMessage.textContent = message;
+    confirmModalOkBtn.textContent = confirmText;
+    confirmModalCancelBtn.textContent = cancelText;
 
-  confirmModal.classList.remove("hidden");
-  document.body.classList.add("modal-open");
+    confirmModal.classList.remove("hidden");
+    document.body.classList.add("modal-open");
 
-  return new Promise((resolve) => {
-    confirmDialogResolver = resolve;
-  });
+    return new Promise((resolve) => {
+        confirmDialogResolver = resolve;
+    });
 }
 
 function setResetOptions(options) {
-  resetOptionsState = {
-    customers: Array.isArray(options?.customers) ? options.customers : [],
-    seasonsByCustomer: options?.seasonsByCustomer || {},
-  };
+    resetOptionsState = {
+        customers: Array.isArray(options?.customers) ? options.customers : [],
+        seasonsByCustomer: options?.seasonsByCustomer || {},
+    };
 
-  if (!resetOptionsState.customers.includes(selectedResetCustomer)) {
-    selectedResetCustomer = "";
-    selectedResetSeason = "";
-  }
+    if (!resetOptionsState.customers.includes(selectedResetCustomer)) {
+        selectedResetCustomer = "";
+        selectedResetSeason = "";
+    }
 
-  renderResetCustomerOptions();
-  renderResetSeasonOptions(selectedResetCustomer);
-  updateResetTabAvailability();
+    renderResetCustomerOptions();
+    renderResetSeasonOptions(selectedResetCustomer);
+    updateResetTabAvailability();
 }
 
 function renderResetCustomerOptions() {
-  if (!resetCustomerMenu || !resetCustomerTrigger) return;
+    if (!resetCustomerMenu || !resetCustomerTrigger) return;
 
-  const customers = resetOptionsState.customers || [];
+    const customers = resetOptionsState.customers || [];
 
-  resetCustomerMenu.innerHTML = `
+    resetCustomerMenu.innerHTML = `
     <button type="button" class="custom-select-option ${selectedResetCustomer === "" ? "active" : ""}" data-reset-customer="">
       Chọn customer
     </button>
     ${customers
-      .map(
-        (customer) => `
+            .map(
+                (customer) => `
           <button
             type="button"
             class="custom-select-option ${selectedResetCustomer === customer ? "active" : ""}"
@@ -1247,31 +1289,31 @@ function renderResetCustomerOptions() {
             ${escapeHtml(customer)}
           </button>
         `
-      )
-      .join("")}
+            )
+            .join("")}
   `;
 
-  resetCustomerTrigger.textContent = selectedResetCustomer || "Chọn customer";
+    resetCustomerTrigger.textContent = selectedResetCustomer || "Chọn customer";
 }
 
 function renderResetSeasonOptions(customer) {
-  if (!resetSeasonMenu || !resetSeasonTrigger) return;
+    if (!resetSeasonMenu || !resetSeasonTrigger) return;
 
-  const seasons = Array.isArray(resetOptionsState.seasonsByCustomer?.[customer])
-    ? resetOptionsState.seasonsByCustomer[customer]
-    : [];
+    const seasons = Array.isArray(resetOptionsState.seasonsByCustomer?.[customer])
+        ? resetOptionsState.seasonsByCustomer[customer]
+        : [];
 
-  if (!seasons.includes(selectedResetSeason)) {
-    selectedResetSeason = "";
-  }
+    if (!seasons.includes(selectedResetSeason)) {
+        selectedResetSeason = "";
+    }
 
-  resetSeasonMenu.innerHTML = `
+    resetSeasonMenu.innerHTML = `
     <button type="button" class="custom-select-option ${selectedResetSeason === "" ? "active" : ""}" data-reset-season="">
       Chọn season
     </button>
     ${seasons
-      .map(
-        (season) => `
+            .map(
+                (season) => `
           <button
             type="button"
             class="custom-select-option ${selectedResetSeason === season ? "active" : ""}"
@@ -1280,616 +1322,625 @@ function renderResetSeasonOptions(customer) {
             ${escapeHtml(season)}
           </button>
         `
-      )
-      .join("")}
+            )
+            .join("")}
   `;
 
-  resetSeasonTrigger.textContent = selectedResetSeason || "Chọn season";
+    resetSeasonTrigger.textContent = selectedResetSeason || "Chọn season";
 }
 
 function handleResetCustomerChange() {
-  renderResetSeasonOptions(selectedResetCustomer);
+    renderResetSeasonOptions(selectedResetCustomer);
 }
 
 function combineImportedWorkbooks(workbooks) {
-  const imports = Array.isArray(workbooks) ? workbooks : [];
-  const mergedSheets = [];
-  let totalRows = 0;
-  let imageIndexCount = 0;
-  let mappedFolderCount = 0;
+    const imports = Array.isArray(workbooks) ? workbooks : [];
+    const mergedSheets = [];
+    let totalRows = 0;
+    let imageIndexCount = 0;
+    let mappedFolderCount = 0;
 
-  imports.forEach((workbook, workbookIndex) => {
-    const sheets = Array.isArray(workbook.sheets) ? workbook.sheets : [];
+    imports.forEach((workbook, workbookIndex) => {
+        const sheets = Array.isArray(workbook.sheets) ? workbook.sheets : [];
 
-    totalRows += Number(workbook.totalRows || 0);
-    imageIndexCount += Number(workbook.imageIndexCount || 0);
-    mappedFolderCount += Number(workbook.mappedFolderCount || 0);
+        totalRows += Number(workbook.totalRows || 0);
+        imageIndexCount += Number(workbook.imageIndexCount || 0);
+        mappedFolderCount += Number(workbook.mappedFolderCount || 0);
 
-    sheets.forEach((sheet, sheetIndex) => {
-      mergedSheets.push({
-        ...sheet,
-        sheetName: `${workbook.fileName} / ${sheet.sheetName}`,
-        __workbookId: workbook.id || `wb-${workbookIndex}`,
-        __sheetId: `${workbook.id || workbookIndex}-${sheetIndex}`,
-      });
+        sheets.forEach((sheet, sheetIndex) => {
+            mergedSheets.push({
+                ...sheet,
+                sheetName: `${workbook.fileName} / ${sheet.sheetName}`,
+                __workbookId: workbook.id || `wb-${workbookIndex}`,
+                __sheetId: `${workbook.id || workbookIndex}-${sheetIndex}`,
+            });
+        });
     });
-  });
 
-  return {
-    id: "combined",
-    fileName: imports.length === 1 ? imports[0].fileName : `${imports.length} file Excel`,
-    sheetCount: mergedSheets.length,
-    totalRows,
-    imageIndexCount,
-    mappedFolderCount,
-    sheets: mergedSheets,
-  };
+    return {
+        id: "combined",
+        fileName: imports.length === 1 ? imports[0].fileName : `${imports.length} file Excel`,
+        sheetCount: mergedSheets.length,
+        totalRows,
+        imageIndexCount,
+        mappedFolderCount,
+        sheets: mergedSheets,
+    };
 }
 
 function refreshCombinedWorkbookView() {
-  if (!workbookList.length) {
-    workbookData = null;
-    sheetTabs.innerHTML = "";
-    excelDataContainer.innerHTML = "";
-    dataCard?.classList.add("hidden");
-    updateSidebarAvailability();
-    return;
-  }
-
-  workbookData = combineImportedWorkbooks(workbookList);
-
-  folderCard?.classList.remove("hidden");
-  imageSearchCard?.classList.remove("hidden");
-  dataCard?.classList.remove("hidden");
-
-  renderSheets(workbookData.sheets);
-  updateSidebarAvailability();
-}
-
-async function handleResetCustomerOnly() {
-  const customer = selectedResetCustomer || "";
-
-  if (!customer) {
-    resetScopeStatus.textContent = "Bạn chưa chọn customer";
-    return;
-  }
-
-  const confirmed = await showConfirmDialog({
-    title: "Reset theo customer",
-    message: `Bạn có chắc muốn reset toàn bộ dữ liệu của customer "${customer}" không?`,
-    confirmText: "Reset",
-    cancelText: "Hủy",
-  });
-
-  if (!confirmed) return;
-
-  try {
-    const response = await fetch(`${basePath}/api/reset/customer`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ customer }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      resetScopeStatus.textContent = result.message || "Reset customer thất bại";
-      return;
-    }
-
-    workbookList = Array.isArray(result.data?.imports) ? result.data.imports : [];
-    setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
-    refreshCombinedWorkbookView();
-
-    resetScopeStatus.textContent = result.message;
-    uploadResult.textContent = `Hiện có ${workbookList.length} file Excel.`;
-
     if (!workbookList.length) {
-      folderCard?.classList.add("hidden");
-      imageSearchCard?.classList.add("hidden");
-      dataCard?.classList.add("hidden");
-      activatePanel("uploadCard");
-    }
-  } catch (error) {
-    console.error(error);
-    resetScopeStatus.textContent = "Có lỗi khi reset customer";
-  }
-}
-
-async function handleResetCustomerSeason() {
-  const customer = selectedResetCustomer || "";
-  const season = selectedResetSeason || "";
-
-  if (!customer || !season) {
-    resetScopeStatus.textContent = "Bạn cần chọn customer và season";
-    return;
-  }
-
-  const confirmed = await showConfirmDialog({
-    title: "Reset theo customer / season",
-    message: `Bạn có chắc muốn reset dữ liệu của "${customer} / ${season}" không?`,
-    confirmText: "Reset",
-    cancelText: "Hủy",
-  });
-
-  if (!confirmed) return;
-
-  try {
-    const response = await fetch(`${basePath}/api/reset/season`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ customer, season }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      resetScopeStatus.textContent = result.message || "Reset season thất bại";
-      return;
+        workbookData = null;
+        sheetTabs.innerHTML = "";
+        excelDataContainer.innerHTML = "";
+        dataCard?.classList.add("hidden");
+        updateSidebarAvailability();
+        return;
     }
 
-    workbookList = Array.isArray(result.data?.imports) ? result.data.imports : [];
-    setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
-    refreshCombinedWorkbookView();
-
-    resetScopeStatus.textContent = result.message;
-    uploadResult.textContent = `Hiện có ${workbookList.length} file Excel.`;
-
-    if (!workbookList.length) {
-      folderCard?.classList.add("hidden");
-      imageSearchCard?.classList.add("hidden");
-      dataCard?.classList.add("hidden");
-      activatePanel("uploadCard");
-    }
-  } catch (error) {
-    console.error(error);
-    resetScopeStatus.textContent = "Có lỗi khi reset season";
-  }
-}
-
-async function restoreStateOnReload() {
-  try {
-    const response = await fetch(`${basePath}/api/state`);
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      return;
-    }
-
-    const imports = Array.isArray(result.data?.imports) ? result.data.imports : [];
-    workbookList = imports;
-
-    setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
-
-    if (!imports.length) {
-      refreshCombinedWorkbookView();
-      return;
-    }
-
-    refreshCombinedWorkbookView();
-
-    uploadResult.textContent = `Đã khôi phục ${workbookList.length} file Excel`;
-
-    const totalMapped = workbookList.reduce(
-      (sum, item) => sum + Number(item.mappedFolderCount || 0),
-      0
-    );
-
-    folderResult.textContent =
-      totalMapped > 0
-        ? `Đã map ${totalMapped} dòng với folder`
-        : "Chưa import folder";
-
-    searchStatus.textContent =
-      "Dữ liệu đã được khôi phục. Bạn có thể tiếp tục dán ảnh để tìm kiếm.";
-
-    activatePanel("dataCard");
-  } catch (error) {
-    console.error("Không khôi phục được state:", error);
-  }
-}
-
-async function handleResetAllData() {
-  const confirmed = await showConfirmDialog({
-    title: "Reset toàn bộ dữ liệu",
-    message: "Bạn có chắc muốn reset toàn bộ dữ liệu đã import không? Thao tác này không thể hoàn tác.",
-    confirmText: "Reset",
-    cancelText: "Hủy",
-  });
-
-  if (!confirmed) {
-    return;
-  }
-
-  excelSearchInput.value = "";
-  currentExcelSearch = "";
-  activeSheetPanelId = null;
-
-  Object.keys(excelColumnFilters).forEach((key) => delete excelColumnFilters[key]);
-  closeExcelFilterMenu();
-
-  Object.keys(activeColumnFilters).forEach((key) => delete activeColumnFilters[key]);
-  closeFilterMenu();
-
-  try {
-    const response = await fetch(`${basePath}/api/reset`, {
-      method: "POST",
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      alert(result.message || "Reset thất bại");
-      return;
-    }
-
-    workbookList = [];
-    workbookData = null;
-    originalMatchResults = [];
-    filteredMatchResults = [];
-
-    excelUploadForm?.reset();
-    folderImportForm?.reset();
-
-    uploadResult.textContent = "Chưa có dữ liệu";
-    folderResult.textContent = "Chưa import folder";
-    searchStatus.textContent = "Chưa dán ảnh";
-    excelSearchStatus.textContent = "Nhập từ khóa để lọc dữ liệu theo tất cả cột text.";
-
-    folderCard?.classList.add("hidden");
-    imageSearchCard?.classList.add("hidden");
-    dataCard?.classList.add("hidden");
-
-    sheetTabs.innerHTML = "";
-    excelDataContainer.innerHTML = "";
-    matchResults.innerHTML = "";
-
-    pastedPreview?.classList.add("hidden");
-    pastedPreview?.removeAttribute("src");
-
-    updateSidebarAvailability();
-    activatePanel("uploadCard");
-
-    alert("Đã reset toàn bộ dữ liệu");
-  } catch (error) {
-    console.error(error);
-    alert("Có lỗi khi reset dữ liệu");
-  }
-}
-
-function updateSidebarAvailability() {
-  navButtons.forEach((button) => {
-    const targetId = button.dataset.target;
-    const panel = document.getElementById(targetId);
-
-    if (!panel) return;
-
-    button.disabled = panel.classList.contains("hidden");
-  });
-}
-
-function activatePanel(panelId) {
-  const targetPanel = document.getElementById(panelId);
-  if (!targetPanel || targetPanel.classList.contains("hidden")) {
-    return;
-  }
-
-  featurePanels.forEach((panel) => panel.classList.add("panel-collapsed"));
-
-  navButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.target === panelId);
-  });
-
-  targetPanel.classList.remove("panel-collapsed");
-}
-
-function buildResetOptionsFromWorkbooks(workbooks) {
-  const seasonsByCustomer = {};
-  const customerSet = new Set();
-
-  (workbooks || []).forEach((workbook) => {
-    const customer = String(workbook.customer || "").trim();
-    if (!customer) return;
-
-    customerSet.add(customer);
-
-    if (!seasonsByCustomer[customer]) {
-      seasonsByCustomer[customer] = [];
-    }
-
-    const seasonValues = Array.isArray(workbook.seasonValues)
-      ? workbook.seasonValues
-      : [];
-
-    if (seasonValues.length) {
-      seasonValues.forEach((season) => {
-        const seasonText = String(season || "").trim();
-        if (seasonText && !seasonsByCustomer[customer].includes(seasonText)) {
-          seasonsByCustomer[customer].push(seasonText);
-        }
-      });
-    } else {
-      const season = String(workbook.season || "").trim();
-      if (season && !seasonsByCustomer[customer].includes(season)) {
-        seasonsByCustomer[customer].push(season);
-      }
-    }
-  });
-
-  Object.keys(seasonsByCustomer).forEach((customer) => {
-    seasonsByCustomer[customer].sort((a, b) =>
-      a.localeCompare(b, "vi", { numeric: true, sensitivity: "base" })
-    );
-  });
-
-  return {
-    customers: Array.from(customerSet).sort((a, b) =>
-      a.localeCompare(b, "vi", { numeric: true, sensitivity: "base" })
-    ),
-    seasonsByCustomer,
-  };
-}
-
-async function handleUploadExcel(event) {
-  excelSearchInput.value = "";
-  currentExcelSearch = "";
-  activeSheetPanelId = null;
-
-  event.preventDefault();
-
-  const file = excelFileInput.files[0];
-  if (!file) {
-    uploadResult.textContent = "Bạn chưa chọn file Excel";
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  uploadResult.textContent = "Đang import file Excel...";
-  folderResult.textContent = "Chưa import folder";
-  searchStatus.textContent = "Chưa dán ảnh";
-
-  try {
-    const response = await fetch(`${basePath}/api/excel/upload`, {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      uploadResult.textContent = result.message || "Import Excel thất bại";
-      return;
-    }
-
-    const returnedImports = Array.isArray(result.data?.imports)
-      ? result.data.imports
-      : [];
-
-    const newWorkbook =
-      result.data?.workbook ||
-      (result.data && Array.isArray(result.data.sheets) ? result.data : null);
-
-    if (returnedImports.length) {
-      workbookList = returnedImports;
-      setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
-    } else if (newWorkbook) {
-      const existedIndex = workbookList.findIndex(
-        (item) => item.id === newWorkbook.id
-      );
-
-      if (existedIndex >= 0) {
-        workbookList[existedIndex] = newWorkbook;
-      } else {
-        workbookList.push(newWorkbook);
-      }
-
-      setResetOptions(buildResetOptionsFromWorkbooks(workbookList));
-    } else {
-      console.error("Upload Excel response không đúng format:", result);
-      uploadResult.textContent = "Import Excel thành công nhưng dữ liệu trả về không đúng";
-      return;
-    }
-
-    refreshCombinedWorkbookView();
-
-    uploadResult.textContent =
-      `${result.message} Hiện có ${workbookList.length} file Excel.`;
+    workbookData = combineImportedWorkbooks(workbookList);
 
     folderCard?.classList.remove("hidden");
     imageSearchCard?.classList.remove("hidden");
     dataCard?.classList.remove("hidden");
 
+    renderSheets(workbookData.sheets);
     updateSidebarAvailability();
-    activatePanel("folderCard");
+}
 
-    searchStatus.textContent =
-      "Excel đã import xong. Bạn có thể dán ảnh hoặc import folder để map chi tiết.";
+async function handleResetCustomerOnly() {
+    const customer = selectedResetCustomer || "";
 
-    excelUploadForm?.reset();
-  } catch (error) {
-    console.error(error);
-    uploadResult.textContent = "Có lỗi khi upload file Excel";
-  }
+    if (!customer) {
+        resetScopeStatus.textContent = "Bạn chưa chọn customer";
+        return;
+    }
+
+    const confirmed = await showConfirmDialog({
+        title: "Reset theo customer",
+        message: `Bạn có chắc muốn reset toàn bộ dữ liệu của customer "${customer}" không?`,
+        confirmText: "Reset",
+        cancelText: "Hủy",
+    });
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`${basePath}/api/reset/customer`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ customer }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            resetScopeStatus.textContent = result.message || "Reset customer thất bại";
+            return;
+        }
+
+        workbookList = Array.isArray(result.data?.imports) ? result.data.imports : [];
+        setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
+        refreshCombinedWorkbookView();
+
+        resetScopeStatus.textContent = result.message;
+        uploadResult.textContent = `Hiện có ${workbookList.length} file Excel.`;
+
+        if (!workbookList.length) {
+            folderCard?.classList.add("hidden");
+            imageSearchCard?.classList.add("hidden");
+            dataCard?.classList.add("hidden");
+            activatePanel("uploadCard");
+        }
+    } catch (error) {
+        console.error(error);
+        resetScopeStatus.textContent = "Có lỗi khi reset customer";
+    }
+}
+
+async function handleResetCustomerSeason() {
+    const customer = selectedResetCustomer || "";
+    const season = selectedResetSeason || "";
+
+    if (!customer || !season) {
+        resetScopeStatus.textContent = "Bạn cần chọn customer và season";
+        return;
+    }
+
+    const confirmed = await showConfirmDialog({
+        title: "Reset theo customer / season",
+        message: `Bạn có chắc muốn reset dữ liệu của "${customer} / ${season}" không?`,
+        confirmText: "Reset",
+        cancelText: "Hủy",
+    });
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`${basePath}/api/reset/season`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ customer, season }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            resetScopeStatus.textContent = result.message || "Reset season thất bại";
+            return;
+        }
+
+        workbookList = Array.isArray(result.data?.imports) ? result.data.imports : [];
+        setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
+        refreshCombinedWorkbookView();
+
+        resetScopeStatus.textContent = result.message;
+        uploadResult.textContent = `Hiện có ${workbookList.length} file Excel.`;
+
+        if (!workbookList.length) {
+            folderCard?.classList.add("hidden");
+            imageSearchCard?.classList.add("hidden");
+            dataCard?.classList.add("hidden");
+            activatePanel("uploadCard");
+        }
+    } catch (error) {
+        console.error(error);
+        resetScopeStatus.textContent = "Có lỗi khi reset season";
+    }
+}
+
+async function restoreStateOnReload() {
+    try {
+        const response = await fetch(`${basePath}/api/state`);
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            return;
+        }
+
+        const imports = Array.isArray(result.data?.imports) ? result.data.imports : [];
+        workbookList = imports;
+
+        setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
+
+        if (!imports.length) {
+            refreshCombinedWorkbookView();
+            return;
+        }
+
+        refreshCombinedWorkbookView();
+
+        uploadResult.textContent = `Đã khôi phục ${workbookList.length} file Excel`;
+
+        const totalMapped = workbookList.reduce(
+            (sum, item) => sum + Number(item.mappedFolderCount || 0),
+            0
+        );
+
+        folderResult.textContent =
+            totalMapped > 0
+                ? `Đã map ${totalMapped} dòng với folder`
+                : "Chưa import folder";
+
+        searchStatus.textContent =
+            "Dữ liệu đã được khôi phục. Bạn có thể tiếp tục dán ảnh để tìm kiếm.";
+
+        activatePanel("dataCard");
+    } catch (error) {
+        console.error("Không khôi phục được state:", error);
+    }
+}
+
+async function handleResetAllData() {
+    const confirmed = await showConfirmDialog({
+        title: "Reset toàn bộ dữ liệu",
+        message: "Bạn có chắc muốn reset toàn bộ dữ liệu đã import không? Thao tác này không thể hoàn tác.",
+        confirmText: "Reset",
+        cancelText: "Hủy",
+    });
+
+    if (!confirmed) {
+        return;
+    }
+
+    excelSearchInput.value = "";
+    currentExcelSearch = "";
+    activeSheetPanelId = null;
+
+    Object.keys(excelColumnFilters).forEach((key) => delete excelColumnFilters[key]);
+    closeExcelFilterMenu();
+
+    Object.keys(activeColumnFilters).forEach((key) => delete activeColumnFilters[key]);
+    closeFilterMenu();
+
+    try {
+        const response = await fetch(`${basePath}/api/reset`, {
+            method: "POST",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            alert(result.message || "Reset thất bại");
+            return;
+        }
+
+        workbookList = [];
+        workbookData = null;
+        originalMatchResults = [];
+        filteredMatchResults = [];
+
+        excelUploadForm?.reset();
+        folderImportForm?.reset();
+
+        uploadResult.textContent = "Chưa có dữ liệu";
+        folderResult.textContent = "Chưa import folder";
+        searchStatus.textContent = "Chưa dán ảnh";
+        excelSearchStatus.textContent = "Nhập từ khóa để lọc dữ liệu theo tất cả cột text.";
+
+        folderCard?.classList.add("hidden");
+        imageSearchCard?.classList.add("hidden");
+        dataCard?.classList.add("hidden");
+
+        sheetTabs.innerHTML = "";
+        excelDataContainer.innerHTML = "";
+        matchResults.innerHTML = "";
+
+        pastedPreview?.classList.add("hidden");
+        pastedPreview?.removeAttribute("src");
+
+        updateSidebarAvailability();
+        activatePanel("uploadCard");
+
+        alert("Đã reset toàn bộ dữ liệu");
+    } catch (error) {
+        console.error(error);
+        alert("Có lỗi khi reset dữ liệu");
+    }
+}
+
+function updateSidebarAvailability() {
+    navButtons.forEach((button) => {
+        const targetId = button.dataset.target;
+        const panel = document.getElementById(targetId);
+
+        if (!panel) return;
+
+        button.disabled = panel.classList.contains("hidden");
+    });
+}
+
+function activatePanel(panelId) {
+    const targetPanel = document.getElementById(panelId);
+    if (!targetPanel || targetPanel.classList.contains("hidden")) {
+        return;
+    }
+
+    featurePanels.forEach((panel) => panel.classList.add("panel-collapsed"));
+
+    let activeButton = null;
+
+    navButtons.forEach((button) => {
+        const isActive = button.dataset.target === panelId;
+        button.classList.toggle("active", isActive);
+
+        if (isActive) {
+            activeButton = button;
+        }
+    });
+
+    targetPanel.classList.remove("panel-collapsed");
+
+    updateNavbarFromButton(activeButton);
+}
+
+function buildResetOptionsFromWorkbooks(workbooks) {
+    const seasonsByCustomer = {};
+    const customerSet = new Set();
+
+    (workbooks || []).forEach((workbook) => {
+        const customer = String(workbook.customer || "").trim();
+        if (!customer) return;
+
+        customerSet.add(customer);
+
+        if (!seasonsByCustomer[customer]) {
+            seasonsByCustomer[customer] = [];
+        }
+
+        const seasonValues = Array.isArray(workbook.seasonValues)
+            ? workbook.seasonValues
+            : [];
+
+        if (seasonValues.length) {
+            seasonValues.forEach((season) => {
+                const seasonText = String(season || "").trim();
+                if (seasonText && !seasonsByCustomer[customer].includes(seasonText)) {
+                    seasonsByCustomer[customer].push(seasonText);
+                }
+            });
+        } else {
+            const season = String(workbook.season || "").trim();
+            if (season && !seasonsByCustomer[customer].includes(season)) {
+                seasonsByCustomer[customer].push(season);
+            }
+        }
+    });
+
+    Object.keys(seasonsByCustomer).forEach((customer) => {
+        seasonsByCustomer[customer].sort((a, b) =>
+            a.localeCompare(b, "vi", { numeric: true, sensitivity: "base" })
+        );
+    });
+
+    return {
+        customers: Array.from(customerSet).sort((a, b) =>
+            a.localeCompare(b, "vi", { numeric: true, sensitivity: "base" })
+        ),
+        seasonsByCustomer,
+    };
+}
+
+async function handleUploadExcel(event) {
+    excelSearchInput.value = "";
+    currentExcelSearch = "";
+    activeSheetPanelId = null;
+
+    event.preventDefault();
+
+    const file = excelFileInput.files[0];
+    if (!file) {
+        uploadResult.textContent = "Bạn chưa chọn file Excel";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    uploadResult.textContent = "Đang import file Excel...";
+    folderResult.textContent = "Chưa import folder";
+    searchStatus.textContent = "Chưa dán ảnh";
+
+    try {
+        const response = await fetch(`${basePath}/api/excel/upload`, {
+            method: "POST",
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            uploadResult.textContent = result.message || "Import Excel thất bại";
+            return;
+        }
+
+        const returnedImports = Array.isArray(result.data?.imports)
+            ? result.data.imports
+            : [];
+
+        const newWorkbook =
+            result.data?.workbook ||
+            (result.data && Array.isArray(result.data.sheets) ? result.data : null);
+
+        if (returnedImports.length) {
+            workbookList = returnedImports;
+            setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
+        } else if (newWorkbook) {
+            const existedIndex = workbookList.findIndex(
+                (item) => item.id === newWorkbook.id
+            );
+
+            if (existedIndex >= 0) {
+                workbookList[existedIndex] = newWorkbook;
+            } else {
+                workbookList.push(newWorkbook);
+            }
+
+            setResetOptions(buildResetOptionsFromWorkbooks(workbookList));
+        } else {
+            console.error("Upload Excel response không đúng format:", result);
+            uploadResult.textContent = "Import Excel thành công nhưng dữ liệu trả về không đúng";
+            return;
+        }
+
+        refreshCombinedWorkbookView();
+
+        uploadResult.textContent =
+            `${result.message} Hiện có ${workbookList.length} file Excel.`;
+
+        folderCard?.classList.remove("hidden");
+        imageSearchCard?.classList.remove("hidden");
+        dataCard?.classList.remove("hidden");
+
+        updateSidebarAvailability();
+        activatePanel("folderCard");
+
+        searchStatus.textContent =
+            "Excel đã import xong. Bạn có thể dán ảnh hoặc import folder để map chi tiết.";
+
+        excelUploadForm?.reset();
+    } catch (error) {
+        console.error(error);
+        uploadResult.textContent = "Có lỗi khi upload file Excel";
+    }
 }
 
 async function handleImportFolder(event) {
-  event.preventDefault();
+    event.preventDefault();
 
-  if (!workbookList.length) {
-    folderResult.textContent = "Bạn cần import Excel trước";
-    return;
-  }
+    if (!workbookList.length) {
+        folderResult.textContent = "Bạn cần import Excel trước";
+        return;
+    }
 
-  const files = Array.from(folderInput.files || []);
-  if (files.length === 0) {
-    folderResult.textContent = "Bạn chưa chọn folder";
-    return;
-  }
+    const files = Array.from(folderInput.files || []);
+    if (files.length === 0) {
+        folderResult.textContent = "Bạn chưa chọn folder";
+        return;
+    }
 
-  const rootFolderName =
-    files[0]?.webkitRelativePath?.split("/")[0] || "Pattern Manual";
+    const rootFolderName =
+        files[0]?.webkitRelativePath?.split("/")[0] || "Pattern Manual";
 
-  const formData = new FormData();
-  formData.append("rootFolderName", rootFolderName);
+    const formData = new FormData();
+    formData.append("rootFolderName", rootFolderName);
 
-  files.forEach((file) => {
-    formData.append("files", file);
-    formData.append("relativePaths", file.webkitRelativePath || file.name);
-  });
-
-  folderResult.textContent = "Đang import folder và map với Style No...";
-
-  try {
-    const response = await fetch(`${basePath}/api/folder/import`, {
-      method: "POST",
-      body: formData,
+    files.forEach((file) => {
+        formData.append("files", file);
+        formData.append("relativePaths", file.webkitRelativePath || file.name);
     });
 
-    const result = await response.json();
+    folderResult.textContent = "Đang import folder và map với Style No...";
 
-    if (!response.ok || !result.success) {
-      folderResult.textContent = result.message || "Import folder thất bại";
-      return;
+    try {
+        const response = await fetch(`${basePath}/api/folder/import`, {
+            method: "POST",
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            folderResult.textContent = result.message || "Import folder thất bại";
+            return;
+        }
+
+        if (Array.isArray(result.data?.imports) && result.data.imports.length) {
+            workbookList = result.data.imports;
+        } else if (result.data?.workbook && Array.isArray(result.data.workbook.sheets)) {
+            const updatedWorkbook = result.data.workbook;
+            const existingIndex = workbookList.findIndex(
+                (item) => item.id === updatedWorkbook.id
+            );
+
+            if (existingIndex >= 0) {
+                workbookList[existingIndex] = updatedWorkbook;
+            } else {
+                workbookList.push(updatedWorkbook);
+            }
+        } else {
+            console.error("Folder import response không đúng format:", result);
+            folderResult.textContent =
+                "Import folder thành công nhưng không lấy được dữ liệu workbook";
+            return;
+        }
+
+        setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
+        refreshCombinedWorkbookView();
+
+        folderResult.textContent =
+            `Import folder thành công. Tổng folder con: ${result.data?.folderCount ?? 0}. ` +
+            `Map được: ${result.data?.mappedCount ?? 0} dòng.`;
+
+        updateSidebarAvailability();
+        activatePanel("dataCard");
+
+        folderImportForm?.reset();
+    } catch (error) {
+        console.error(error);
+        folderResult.textContent = "Có lỗi khi import folder";
     }
-
-    if (Array.isArray(result.data?.imports) && result.data.imports.length) {
-      workbookList = result.data.imports;
-    } else if (result.data?.workbook && Array.isArray(result.data.workbook.sheets)) {
-      const updatedWorkbook = result.data.workbook;
-      const existingIndex = workbookList.findIndex(
-        (item) => item.id === updatedWorkbook.id
-      );
-
-      if (existingIndex >= 0) {
-        workbookList[existingIndex] = updatedWorkbook;
-      } else {
-        workbookList.push(updatedWorkbook);
-      }
-    } else {
-      console.error("Folder import response không đúng format:", result);
-      folderResult.textContent =
-        "Import folder thành công nhưng không lấy được dữ liệu workbook";
-      return;
-    }
-
-    setResetOptions(result.data?.resetOptions || buildResetOptionsFromWorkbooks(workbookList));
-    refreshCombinedWorkbookView();
-
-    folderResult.textContent =
-      `Import folder thành công. Tổng folder con: ${result.data?.folderCount ?? 0}. ` +
-      `Map được: ${result.data?.mappedCount ?? 0} dòng.`;
-
-    updateSidebarAvailability();
-    activatePanel("dataCard");
-
-    folderImportForm?.reset();
-  } catch (error) {
-    console.error(error);
-    folderResult.textContent = "Có lỗi khi import folder";
-  }
 }
 
 function handlePasteImage(event) {
-  const items = Array.from(event.clipboardData?.items || []);
-  const imageItem = items.find((item) => item.type.startsWith("image/"));
+    const items = Array.from(event.clipboardData?.items || []);
+    const imageItem = items.find((item) => item.type.startsWith("image/"));
 
-  if (!imageItem) {
-    searchStatus.textContent = "Clipboard hiện không có ảnh";
-    return;
-  }
+    if (!imageItem) {
+        searchStatus.textContent = "Clipboard hiện không có ảnh";
+        return;
+    }
 
-  event.preventDefault();
+    event.preventDefault();
 
-  const imageFile = imageItem.getAsFile();
-  if (!imageFile) {
-    searchStatus.textContent = "Không đọc được ảnh từ clipboard";
-    return;
-  }
+    const imageFile = imageItem.getAsFile();
+    if (!imageFile) {
+        searchStatus.textContent = "Không đọc được ảnh từ clipboard";
+        return;
+    }
 
-  const previewUrl = URL.createObjectURL(imageFile);
-  pastedPreview.src = previewUrl;
-  pastedPreview.classList.remove("hidden");
+    const previewUrl = URL.createObjectURL(imageFile);
+    pastedPreview.src = previewUrl;
+    pastedPreview.classList.remove("hidden");
 
-  searchByImage(imageFile);
+    searchByImage(imageFile);
 }
 
 async function searchByImage(imageFile) {
-  const formData = new FormData();
-  formData.append("image", imageFile, "pasted-image.png");
+    const formData = new FormData();
+    formData.append("image", imageFile, "pasted-image.png");
 
-  searchStatus.textContent = "Đang so khớp ảnh...";
-  matchResults.innerHTML = "";
+    searchStatus.textContent = "Đang so khớp ảnh...";
+    matchResults.innerHTML = "";
 
-  try {
-    const response = await fetch(`${basePath}/api/search-by-image`, {
-      method: "POST",
-      body: formData,
-    });
+    try {
+        const response = await fetch(`${basePath}/api/search-by-image`, {
+            method: "POST",
+            body: formData,
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      searchStatus.textContent = result.message || "Tìm ảnh thất bại";
-      return;
+        if (!response.ok || !result.success) {
+            searchStatus.textContent = result.message || "Tìm ảnh thất bại";
+            return;
+        }
+
+        searchStatus.textContent = `Tìm thấy ${result.data.results.length} hàng gần giống nhất`;
+        renderMatchResults(result.data.results);
+        activatePanel("imageSearchCard");
+    } catch (error) {
+        console.error(error);
+        searchStatus.textContent = "Có lỗi khi tìm ảnh tương tự";
     }
-
-    searchStatus.textContent = `Tìm thấy ${result.data.results.length} hàng gần giống nhất`;
-    renderMatchResults(result.data.results);
-    activatePanel("imageSearchCard");
-  } catch (error) {
-    console.error(error);
-    searchStatus.textContent = "Có lỗi khi tìm ảnh tương tự";
-  }
 }
 
 /* =========================
    FILTER CHO KẾT QUẢ TÌM ẢNH
 ========================= */
 function normalizeFilterValue(value) {
-  return String(value ?? "").trim();
+    return String(value ?? "").trim();
 }
 
 function hasActiveFilter(columnKey) {
-  return activeColumnFilters[columnKey] instanceof Set;
+    return activeColumnFilters[columnKey] instanceof Set;
 }
 
 function renderMatchResults(results) {
-  if (!Array.isArray(results) || results.length === 0) {
-    originalMatchResults = [];
-    filteredMatchResults = [];
-    matchResults.innerHTML = `<p class="empty-state">Không tìm thấy kết quả phù hợp</p>`;
-    closeFilterMenu();
-    return;
-  }
+    if (!Array.isArray(results) || results.length === 0) {
+        originalMatchResults = [];
+        filteredMatchResults = [];
+        matchResults.innerHTML = `<p class="empty-state">Không tìm thấy kết quả phù hợp</p>`;
+        closeFilterMenu();
+        return;
+    }
 
-  originalMatchResults = [...results];
-  applyColumnFilters();
-  renderMatchResultsTable();
-  closeFilterMenu();
+    originalMatchResults = [...results];
+    applyColumnFilters();
+    renderMatchResultsTable();
+    closeFilterMenu();
 }
 
 function applyColumnFilters() {
-  filteredMatchResults = originalMatchResults.filter((item) => {
-    return MATCH_COLUMNS.every((column) => {
-      if (!column.filterable) return true;
+    filteredMatchResults = originalMatchResults.filter((item) => {
+        return MATCH_COLUMNS.every((column) => {
+            if (!column.filterable) return true;
 
-      const selectedValues = activeColumnFilters[column.key];
-      if (!(selectedValues instanceof Set)) return true;
+            const selectedValues = activeColumnFilters[column.key];
+            if (!(selectedValues instanceof Set)) return true;
 
-      const currentValue = normalizeFilterValue(column.getValue(item));
-      return selectedValues.has(currentValue);
+            const currentValue = normalizeFilterValue(column.getValue(item));
+            return selectedValues.has(currentValue);
+        });
     });
-  });
 }
 
 function renderMatchResultsTable() {
-  matchResults.innerHTML = `
+    matchResults.innerHTML = `
     <div class="excel-table-wrap">
       <table class="excel-table">
         <thead>
@@ -1900,15 +1951,15 @@ function renderMatchResultsTable() {
         </thead>
         <tbody>
           ${filteredMatchResults.length
-      ? filteredMatchResults.map((item, index) => renderTableRow(item, index)).join("")
-      : `
+            ? filteredMatchResults.map((item, index) => renderTableRow(item, index)).join("")
+            : `
               <tr>
                 <td colspan="${MATCH_COLUMNS.length + 1}">
                   <div class="empty-state-table">Không có dữ liệu phù hợp với filter hiện tại</div>
                 </td>
               </tr>
             `
-    }
+        }
         </tbody>
       </table>
     </div>
@@ -1916,14 +1967,14 @@ function renderMatchResultsTable() {
 }
 
 function renderTableHeader(column) {
-  const active = hasActiveFilter(column.key);
+    const active = hasActiveFilter(column.key);
 
-  return `
+    return `
     <th class="${active ? "filter-active-col" : ""}">
       <div class="th-wrap">
         <span class="th-label">${escapeHtml(column.label)}</span>
         ${column.filterable
-      ? `
+            ? `
             <button
               type="button"
               class="filter-trigger ${active ? "active" : ""}"
@@ -1933,25 +1984,25 @@ function renderTableHeader(column) {
               ▾
             </button>
           `
-      : ""
-    }
+            : ""
+        }
       </div>
     </th>
   `;
 }
 
 function renderTableRow(item, index) {
-  const row = item.row || {};
+    const row = item.row || {};
 
-  return `
+    return `
     <tr>
       <td class="cell-center cell-stt">${index + 1}</td>
 
       <td class="cell-image">
         ${item.matchedImage
-      ? `<img src="${escapeAttribute(item.matchedImage)}" alt="Ảnh khớp" class="result-thumb previewable-image" />`
-      : `<span class="muted-text">-</span>`
-    }
+            ? `<img src="${escapeAttribute(item.matchedImage)}" alt="Ảnh khớp" class="result-thumb previewable-image" />`
+            : `<span class="muted-text">-</span>`
+        }
       </td>
 
       <td>${escapeHtml(row["Style No"] || "")}</td>
@@ -1965,140 +2016,140 @@ function renderTableRow(item, index) {
 
       <td class="cell-center">
         ${item.detailUrl
-      ? `<a class="detail-link-btn" href="${escapeAttribute(item.detailUrl)}" target="_blank" rel="noopener noreferrer">Mở</a>`
-      : `<span class="muted-text">-</span>`
-    }
+            ? `<a class="detail-link-btn" href="${escapeAttribute(item.detailUrl)}" target="_blank" rel="noopener noreferrer">Mở</a>`
+            : `<span class="muted-text">-</span>`
+        }
       </td>
     </tr>
   `;
 }
 
 function getBaseRowsForColumnFilter(columnKey) {
-  return originalMatchResults.filter((item) => {
-    return MATCH_COLUMNS.every((column) => {
-      if (!column.filterable) return true;
-      if (column.key === columnKey) return true;
+    return originalMatchResults.filter((item) => {
+        return MATCH_COLUMNS.every((column) => {
+            if (!column.filterable) return true;
+            if (column.key === columnKey) return true;
 
-      const selectedValues = activeColumnFilters[column.key];
-      if (!(selectedValues instanceof Set)) return true;
+            const selectedValues = activeColumnFilters[column.key];
+            if (!(selectedValues instanceof Set)) return true;
 
-      const currentValue = normalizeFilterValue(column.getValue(item));
-      return selectedValues.has(currentValue);
+            const currentValue = normalizeFilterValue(column.getValue(item));
+            return selectedValues.has(currentValue);
+        });
     });
-  });
 }
 
 function getDistinctColumnValues(columnKey) {
-  const column = MATCH_COLUMNS.find((c) => c.key === columnKey);
-  if (!column) return [];
+    const column = MATCH_COLUMNS.find((c) => c.key === columnKey);
+    if (!column) return [];
 
-  const rows = getBaseRowsForColumnFilter(columnKey);
-  const map = new Map();
+    const rows = getBaseRowsForColumnFilter(columnKey);
+    const map = new Map();
 
-  rows.forEach((item) => {
-    const raw = normalizeFilterValue(column.getValue(item));
-    const label = raw || "(Trống)";
+    rows.forEach((item) => {
+        const raw = normalizeFilterValue(column.getValue(item));
+        const label = raw || "(Trống)";
 
-    if (!map.has(raw)) {
-      map.set(raw, {
-        value: raw,
-        label,
-        count: 0,
-      });
-    }
+        if (!map.has(raw)) {
+            map.set(raw, {
+                value: raw,
+                label,
+                count: 0,
+            });
+        }
 
-    map.get(raw).count += 1;
-  });
+        map.get(raw).count += 1;
+    });
 
-  return Array.from(map.values()).sort((a, b) =>
-    a.label.localeCompare(b.label, "vi", {
-      numeric: true,
-      sensitivity: "base",
-    })
-  );
+    return Array.from(map.values()).sort((a, b) =>
+        a.label.localeCompare(b.label, "vi", {
+            numeric: true,
+            sensitivity: "base",
+        })
+    );
 }
 
 function ensureFilterPopup() {
-  let popup = document.getElementById("excelFilterPopup");
+    let popup = document.getElementById("excelFilterPopup");
 
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.id = "excelFilterPopup";
-    popup.className = "excel-filter-popup hidden";
-    document.body.appendChild(popup);
+    if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "excelFilterPopup";
+        popup.className = "excel-filter-popup hidden";
+        document.body.appendChild(popup);
 
-    popup.addEventListener("input", handleFilterPopupInput);
-    popup.addEventListener("change", handleFilterPopupChange);
-    popup.addEventListener("click", handleFilterPopupClick);
-  }
+        popup.addEventListener("input", handleFilterPopupInput);
+        popup.addEventListener("change", handleFilterPopupChange);
+        popup.addEventListener("click", handleFilterPopupClick);
+    }
 
-  return popup;
+    return popup;
 }
 
 function openFilterMenu(columnKey, anchorEl) {
-  filterMenuAnchor = anchorEl;
+    filterMenuAnchor = anchorEl;
 
-  const distinctValues = getDistinctColumnValues(columnKey);
-  const selected =
-    activeColumnFilters[columnKey] instanceof Set
-      ? new Set(activeColumnFilters[columnKey])
-      : new Set(distinctValues.map((item) => item.value));
+    const distinctValues = getDistinctColumnValues(columnKey);
+    const selected =
+        activeColumnFilters[columnKey] instanceof Set
+            ? new Set(activeColumnFilters[columnKey])
+            : new Set(distinctValues.map((item) => item.value));
 
-  filterMenuState = {
-    columnKey,
-    search: "",
-    selected,
-  };
+    filterMenuState = {
+        columnKey,
+        search: "",
+        selected,
+    };
 
-  renderFilterPopup();
+    renderFilterPopup();
 }
 
 function closeFilterMenu() {
-  filterMenuState = null;
-  filterMenuAnchor = null;
+    filterMenuState = null;
+    filterMenuAnchor = null;
 
-  const popup = document.getElementById("excelFilterPopup");
-  if (popup) {
-    popup.classList.add("hidden");
-    popup.innerHTML = "";
-  }
+    const popup = document.getElementById("excelFilterPopup");
+    if (popup) {
+        popup.classList.add("hidden");
+        popup.innerHTML = "";
+    }
 }
 
 function getVisibleFilterOptions() {
-  if (!filterMenuState) return [];
+    if (!filterMenuState) return [];
 
-  const allValues = getDistinctColumnValues(filterMenuState.columnKey);
-  const keyword = filterMenuState.search.trim().toLowerCase();
+    const allValues = getDistinctColumnValues(filterMenuState.columnKey);
+    const keyword = filterMenuState.search.trim().toLowerCase();
 
-  if (!keyword) return allValues;
+    if (!keyword) return allValues;
 
-  return allValues.filter((item) =>
-    item.label.toLowerCase().includes(keyword)
-  );
+    return allValues.filter((item) =>
+        item.label.toLowerCase().includes(keyword)
+    );
 }
 
 function renderFilterPopup() {
-  const popup = ensureFilterPopup();
+    const popup = ensureFilterPopup();
 
-  if (!filterMenuState) {
-    popup.classList.add("hidden");
-    popup.innerHTML = "";
-    return;
-  }
+    if (!filterMenuState) {
+        popup.classList.add("hidden");
+        popup.innerHTML = "";
+        return;
+    }
 
-  const column = MATCH_COLUMNS.find((c) => c.key === filterMenuState.columnKey);
-  const visibleValues = getVisibleFilterOptions();
+    const column = MATCH_COLUMNS.find((c) => c.key === filterMenuState.columnKey);
+    const visibleValues = getVisibleFilterOptions();
 
-  const checkedVisibleCount = visibleValues.filter((item) =>
-    filterMenuState.selected.has(item.value)
-  ).length;
+    const checkedVisibleCount = visibleValues.filter((item) =>
+        filterMenuState.selected.has(item.value)
+    ).length;
 
-  const allVisibleChecked =
-    visibleValues.length > 0 && checkedVisibleCount === visibleValues.length;
+    const allVisibleChecked =
+        visibleValues.length > 0 && checkedVisibleCount === visibleValues.length;
 
-  const noneVisibleChecked = checkedVisibleCount === 0;
+    const noneVisibleChecked = checkedVisibleCount === 0;
 
-  popup.innerHTML = `
+    popup.innerHTML = `
     <div class="filter-panel">
       <div class="filter-panel-title">${escapeHtml(column?.label || "Filter")}</div>
 
@@ -2121,9 +2172,9 @@ function renderFilterPopup() {
 
         <div class="filter-value-list">
           ${visibleValues.length
-      ? visibleValues
-        .map(
-          (item) => `
+            ? visibleValues
+                .map(
+                    (item) => `
                     <label class="filter-check-row">
                       <input
                         type="checkbox"
@@ -2134,10 +2185,10 @@ function renderFilterPopup() {
                       <span class="filter-text">${escapeHtml(item.label)}</span>
                     </label>
                   `
-        )
-        .join("")
-      : `<div class="filter-empty">Không có giá trị</div>`
-    }
+                )
+                .join("")
+            : `<div class="filter-empty">Không có giá trị</div>`
+        }
         </div>
       </div>
 
@@ -2150,323 +2201,323 @@ function renderFilterPopup() {
     </div>
   `;
 
-  popup.classList.remove("hidden");
-  positionFilterPopup();
+    popup.classList.remove("hidden");
+    positionFilterPopup();
 
-  const selectAllCheckbox = popup.querySelector('[data-role="select-all"]');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.indeterminate =
-      !allVisibleChecked && !noneVisibleChecked;
-  }
+    const selectAllCheckbox = popup.querySelector('[data-role="select-all"]');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.indeterminate =
+            !allVisibleChecked && !noneVisibleChecked;
+    }
 }
 
 function positionFilterPopup() {
-  const popup = document.getElementById("excelFilterPopup");
-  if (!popup || !filterMenuAnchor || popup.classList.contains("hidden")) return;
+    const popup = document.getElementById("excelFilterPopup");
+    if (!popup || !filterMenuAnchor || popup.classList.contains("hidden")) return;
 
-  const rect = filterMenuAnchor.getBoundingClientRect();
+    const rect = filterMenuAnchor.getBoundingClientRect();
 
-  popup.style.left = `${window.scrollX + rect.left}px`;
-  popup.style.top = `${window.scrollY + rect.bottom + 6}px`;
+    popup.style.left = `${window.scrollX + rect.left}px`;
+    popup.style.top = `${window.scrollY + rect.bottom + 6}px`;
 
-  const popupRect = popup.getBoundingClientRect();
-  const maxLeft = window.scrollX + window.innerWidth - popupRect.width - 12;
+    const popupRect = popup.getBoundingClientRect();
+    const maxLeft = window.scrollX + window.innerWidth - popupRect.width - 12;
 
-  if (window.scrollX + rect.left > maxLeft) {
-    popup.style.left = `${Math.max(12, maxLeft)}px`;
-  }
+    if (window.scrollX + rect.left > maxLeft) {
+        popup.style.left = `${Math.max(12, maxLeft)}px`;
+    }
 }
 
 function handleFilterPopupInput(event) {
-  if (!filterMenuState) return;
+    if (!filterMenuState) return;
 
-  if (event.target.matches(".filter-search-input")) {
-    filterMenuState.search = event.target.value || "";
-    renderFilterPopup();
-  }
+    if (event.target.matches(".filter-search-input")) {
+        filterMenuState.search = event.target.value || "";
+        renderFilterPopup();
+    }
 }
 
 function handleFilterPopupChange(event) {
-  if (!filterMenuState) return;
+    if (!filterMenuState) return;
 
-  const target = event.target;
+    const target = event.target;
 
-  if (target.matches('[data-role="select-all"]')) {
-    const visibleValues = getVisibleFilterOptions();
+    if (target.matches('[data-role="select-all"]')) {
+        const visibleValues = getVisibleFilterOptions();
 
-    if (target.checked) {
-      visibleValues.forEach((item) => filterMenuState.selected.add(item.value));
-    } else {
-      visibleValues.forEach((item) => filterMenuState.selected.delete(item.value));
+        if (target.checked) {
+            visibleValues.forEach((item) => filterMenuState.selected.add(item.value));
+        } else {
+            visibleValues.forEach((item) => filterMenuState.selected.delete(item.value));
+        }
+
+        renderFilterPopup();
+        return;
     }
 
-    renderFilterPopup();
-    return;
-  }
+    if (target.matches('[data-role="filter-value"]')) {
+        const value = target.value;
 
-  if (target.matches('[data-role="filter-value"]')) {
-    const value = target.value;
+        if (target.checked) {
+            filterMenuState.selected.add(value);
+        } else {
+            filterMenuState.selected.delete(value);
+        }
 
-    if (target.checked) {
-      filterMenuState.selected.add(value);
-    } else {
-      filterMenuState.selected.delete(value);
+        renderFilterPopup();
     }
-
-    renderFilterPopup();
-  }
 }
 
 function handleFilterPopupClick(event) {
-  if (!filterMenuState) return;
+    if (!filterMenuState) return;
 
-  const actionButton = event.target.closest("[data-action]");
-  if (!actionButton) return;
+    const actionButton = event.target.closest("[data-action]");
+    if (!actionButton) return;
 
-  const action = actionButton.dataset.action;
+    const action = actionButton.dataset.action;
 
-  if (action === "cancel") {
-    closeFilterMenu();
-    return;
-  }
+    if (action === "cancel") {
+        closeFilterMenu();
+        return;
+    }
 
-  if (action === "clear") {
-    delete activeColumnFilters[filterMenuState.columnKey];
-    applyColumnFilters();
-    renderMatchResultsTable();
-    closeFilterMenu();
-    return;
-  }
+    if (action === "clear") {
+        delete activeColumnFilters[filterMenuState.columnKey];
+        applyColumnFilters();
+        renderMatchResultsTable();
+        closeFilterMenu();
+        return;
+    }
 
-  if (action === "ok") {
-    applyFilterMenuSelection();
-  }
+    if (action === "ok") {
+        applyFilterMenuSelection();
+    }
 }
 
 function applyFilterMenuSelection() {
-  if (!filterMenuState) return;
+    if (!filterMenuState) return;
 
-  const allValues = getDistinctColumnValues(filterMenuState.columnKey).map(
-    (item) => item.value
-  );
+    const allValues = getDistinctColumnValues(filterMenuState.columnKey).map(
+        (item) => item.value
+    );
 
-  const allSelected =
-    filterMenuState.selected.size === allValues.length &&
-    allValues.every((value) => filterMenuState.selected.has(value));
+    const allSelected =
+        filterMenuState.selected.size === allValues.length &&
+        allValues.every((value) => filterMenuState.selected.has(value));
 
-  if (allSelected) {
-    delete activeColumnFilters[filterMenuState.columnKey];
-  } else {
-    activeColumnFilters[filterMenuState.columnKey] = new Set(filterMenuState.selected);
-  }
+    if (allSelected) {
+        delete activeColumnFilters[filterMenuState.columnKey];
+    } else {
+        activeColumnFilters[filterMenuState.columnKey] = new Set(filterMenuState.selected);
+    }
 
-  applyColumnFilters();
-  renderMatchResultsTable();
-  closeFilterMenu();
+    applyColumnFilters();
+    renderMatchResultsTable();
+    closeFilterMenu();
 }
 
 /* =========================
    FILTER CHO TAB DỮ LIỆU EXCEL
 ========================= */
 function normalizeExcelFilterValue(value) {
-  return String(value ?? "").trim();
+    return String(value ?? "").trim();
 }
 
 function isExcelHeaderFilterable(header) {
-  return header !== "Sketch Design";
+    return header !== "Sketch Design";
 }
 
 function hasExcelActiveFilter(header) {
-  return excelColumnFilters[header] instanceof Set;
+    return excelColumnFilters[header] instanceof Set;
 }
 
 function hasAnyExcelActiveFilter() {
-  return Object.keys(excelColumnFilters).some(
-    (key) => excelColumnFilters[key] instanceof Set
-  );
+    return Object.keys(excelColumnFilters).some(
+        (key) => excelColumnFilters[key] instanceof Set
+    );
 }
 
 function getCombinedExcelHeaders(sheets) {
-  const headerSet = new Set();
-  const headers = [];
+    const headerSet = new Set();
+    const headers = [];
 
-  sheets.forEach((sheet) => {
-    (sheet.headers || []).forEach((header) => {
-      if (!headerSet.has(header)) {
-        headerSet.add(header);
-        headers.push(header);
-      }
+    sheets.forEach((sheet) => {
+        (sheet.headers || []).forEach((header) => {
+            if (!headerSet.has(header)) {
+                headerSet.add(header);
+                headers.push(header);
+            }
+        });
     });
-  });
 
-  return [...headers, "Chi tiết"];
+    return [...headers, "Chi tiết"];
 }
 
 function getCombinedExcelRows(sheets) {
-  const rows = [];
+    const rows = [];
 
-  sheets.forEach((sheet, sourceIndex) => {
-    (sheet.rows || []).forEach((row) => {
-      rows.push({
-        ...row,
-        __sheetName: sheet.sheetName,
-        __sourceIndex: sourceIndex,
-      });
+    sheets.forEach((sheet, sourceIndex) => {
+        (sheet.rows || []).forEach((row) => {
+            rows.push({
+                ...row,
+                __sheetName: sheet.sheetName,
+                __sourceIndex: sourceIndex,
+            });
+        });
     });
-  });
 
-  return rows;
+    return rows;
 }
 
 function getExcelCellValueByHeader(row, header) {
-  if (header === "Chi tiết") {
-    return row.__folderName || "";
-  }
+    if (header === "Chi tiết") {
+        return row.__folderName || "";
+    }
 
-  return row?.[header] ?? "";
+    return row?.[header] ?? "";
 }
 
 function rowMatchesExcelColumnFilters(row, headers, ignoreHeader = null) {
-  const availableHeaders = new Set([...(headers || []), "Chi tiết"]);
+    const availableHeaders = new Set([...(headers || []), "Chi tiết"]);
 
-  for (const [header, selectedValues] of Object.entries(excelColumnFilters)) {
-    if (!(selectedValues instanceof Set)) continue;
-    if (header === ignoreHeader) continue;
-    if (!availableHeaders.has(header)) continue;
+    for (const [header, selectedValues] of Object.entries(excelColumnFilters)) {
+        if (!(selectedValues instanceof Set)) continue;
+        if (header === ignoreHeader) continue;
+        if (!availableHeaders.has(header)) continue;
 
-    const currentValue = normalizeExcelFilterValue(
-      getExcelCellValueByHeader(row, header)
-    );
+        const currentValue = normalizeExcelFilterValue(
+            getExcelCellValueByHeader(row, header)
+        );
 
-    if (!selectedValues.has(currentValue)) {
-      return false;
+        if (!selectedValues.has(currentValue)) {
+            return false;
+        }
     }
-  }
 
-  return true;
+    return true;
 }
 
 function getExcelFilterBaseRows(header) {
-  if (!workbookData || !Array.isArray(workbookData.sheets)) return [];
+    if (!workbookData || !Array.isArray(workbookData.sheets)) return [];
 
-  const combinedHeaders = getCombinedExcelHeaders(workbookData.sheets);
-  const combinedRows = getCombinedExcelRows(workbookData.sheets);
+    const combinedHeaders = getCombinedExcelHeaders(workbookData.sheets);
+    const combinedRows = getCombinedExcelRows(workbookData.sheets);
 
-  return combinedRows.filter((row) => {
-    return (
-      rowMatchesKeyword(row, combinedHeaders, currentExcelSearch) &&
-      rowMatchesExcelColumnFilters(row, combinedHeaders, header)
-    );
-  });
+    return combinedRows.filter((row) => {
+        return (
+            rowMatchesKeyword(row, combinedHeaders, currentExcelSearch) &&
+            rowMatchesExcelColumnFilters(row, combinedHeaders, header)
+        );
+    });
 }
 
 function getDistinctExcelColumnValues(header) {
-  const rows = getExcelFilterBaseRows(header);
-  const map = new Map();
+    const rows = getExcelFilterBaseRows(header);
+    const map = new Map();
 
-  rows.forEach((row) => {
-    const raw = normalizeExcelFilterValue(getExcelCellValueByHeader(row, header));
-    const label = raw || "(Trống)";
+    rows.forEach((row) => {
+        const raw = normalizeExcelFilterValue(getExcelCellValueByHeader(row, header));
+        const label = raw || "(Trống)";
 
-    if (!map.has(raw)) {
-      map.set(raw, {
-        value: raw,
-        label,
-        count: 0,
-      });
-    }
+        if (!map.has(raw)) {
+            map.set(raw, {
+                value: raw,
+                label,
+                count: 0,
+            });
+        }
 
-    map.get(raw).count += 1;
-  });
+        map.get(raw).count += 1;
+    });
 
-  return Array.from(map.values()).sort((a, b) =>
-    a.label.localeCompare(b.label, "vi", {
-      numeric: true,
-      sensitivity: "base",
-    })
-  );
+    return Array.from(map.values()).sort((a, b) =>
+        a.label.localeCompare(b.label, "vi", {
+            numeric: true,
+            sensitivity: "base",
+        })
+    );
 }
 
 function ensureExcelFilterPopup() {
-  let popup = document.getElementById("excelDataFilterPopup");
+    let popup = document.getElementById("excelDataFilterPopup");
 
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.id = "excelDataFilterPopup";
-    popup.className = "excel-filter-popup hidden";
-    document.body.appendChild(popup);
+    if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "excelDataFilterPopup";
+        popup.className = "excel-filter-popup hidden";
+        document.body.appendChild(popup);
 
-    popup.addEventListener("input", handleExcelFilterPopupInput);
-    popup.addEventListener("change", handleExcelFilterPopupChange);
-    popup.addEventListener("click", handleExcelFilterPopupClick);
-  }
+        popup.addEventListener("input", handleExcelFilterPopupInput);
+        popup.addEventListener("change", handleExcelFilterPopupChange);
+        popup.addEventListener("click", handleExcelFilterPopupClick);
+    }
 
-  return popup;
+    return popup;
 }
 
 function openExcelFilterMenu(header, anchorEl) {
-  excelFilterMenuAnchor = anchorEl;
+    excelFilterMenuAnchor = anchorEl;
 
-  const distinctValues = getDistinctExcelColumnValues(header);
-  const selected =
-    excelColumnFilters[header] instanceof Set
-      ? new Set(excelColumnFilters[header])
-      : new Set(distinctValues.map((item) => item.value));
+    const distinctValues = getDistinctExcelColumnValues(header);
+    const selected =
+        excelColumnFilters[header] instanceof Set
+            ? new Set(excelColumnFilters[header])
+            : new Set(distinctValues.map((item) => item.value));
 
-  excelFilterMenuState = {
-    header,
-    search: "",
-    selected,
-  };
+    excelFilterMenuState = {
+        header,
+        search: "",
+        selected,
+    };
 
-  renderExcelFilterPopup();
+    renderExcelFilterPopup();
 }
 
 function closeExcelFilterMenu() {
-  excelFilterMenuState = null;
-  excelFilterMenuAnchor = null;
+    excelFilterMenuState = null;
+    excelFilterMenuAnchor = null;
 
-  const popup = document.getElementById("excelDataFilterPopup");
-  if (popup) {
-    popup.classList.add("hidden");
-    popup.innerHTML = "";
-  }
+    const popup = document.getElementById("excelDataFilterPopup");
+    if (popup) {
+        popup.classList.add("hidden");
+        popup.innerHTML = "";
+    }
 }
 
 function getVisibleExcelFilterOptions() {
-  if (!excelFilterMenuState) return [];
+    if (!excelFilterMenuState) return [];
 
-  const allValues = getDistinctExcelColumnValues(excelFilterMenuState.header);
-  const keyword = excelFilterMenuState.search.trim().toLowerCase();
+    const allValues = getDistinctExcelColumnValues(excelFilterMenuState.header);
+    const keyword = excelFilterMenuState.search.trim().toLowerCase();
 
-  if (!keyword) return allValues;
+    if (!keyword) return allValues;
 
-  return allValues.filter((item) =>
-    item.label.toLowerCase().includes(keyword)
-  );
+    return allValues.filter((item) =>
+        item.label.toLowerCase().includes(keyword)
+    );
 }
 
 function renderExcelFilterPopup() {
-  const popup = ensureExcelFilterPopup();
+    const popup = ensureExcelFilterPopup();
 
-  if (!excelFilterMenuState) {
-    popup.classList.add("hidden");
-    popup.innerHTML = "";
-    return;
-  }
+    if (!excelFilterMenuState) {
+        popup.classList.add("hidden");
+        popup.innerHTML = "";
+        return;
+    }
 
-  const visibleValues = getVisibleExcelFilterOptions();
+    const visibleValues = getVisibleExcelFilterOptions();
 
-  const checkedVisibleCount = visibleValues.filter((item) =>
-    excelFilterMenuState.selected.has(item.value)
-  ).length;
+    const checkedVisibleCount = visibleValues.filter((item) =>
+        excelFilterMenuState.selected.has(item.value)
+    ).length;
 
-  const allVisibleChecked =
-    visibleValues.length > 0 && checkedVisibleCount === visibleValues.length;
+    const allVisibleChecked =
+        visibleValues.length > 0 && checkedVisibleCount === visibleValues.length;
 
-  const noneVisibleChecked = checkedVisibleCount === 0;
+    const noneVisibleChecked = checkedVisibleCount === 0;
 
-  popup.innerHTML = `
+    popup.innerHTML = `
     <div class="filter-panel">
       <div class="filter-panel-title">${escapeHtml(excelFilterMenuState.header)}</div>
 
@@ -2489,9 +2540,9 @@ function renderExcelFilterPopup() {
 
         <div class="filter-value-list">
           ${visibleValues.length
-      ? visibleValues
-        .map(
-          (item) => `
+            ? visibleValues
+                .map(
+                    (item) => `
                     <label class="filter-check-row">
                       <input
                         type="checkbox"
@@ -2502,10 +2553,10 @@ function renderExcelFilterPopup() {
                       <span class="filter-text">${escapeHtml(item.label)}</span>
                     </label>
                   `
-        )
-        .join("")
-      : `<div class="filter-empty">Không có giá trị</div>`
-    }
+                )
+                .join("")
+            : `<div class="filter-empty">Không có giá trị</div>`
+        }
         </div>
       </div>
 
@@ -2518,131 +2569,131 @@ function renderExcelFilterPopup() {
     </div>
   `;
 
-  popup.classList.remove("hidden");
-  positionExcelFilterPopup();
+    popup.classList.remove("hidden");
+    positionExcelFilterPopup();
 
-  const selectAllCheckbox = popup.querySelector('[data-role="select-all"]');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.indeterminate =
-      !allVisibleChecked && !noneVisibleChecked;
-  }
+    const selectAllCheckbox = popup.querySelector('[data-role="select-all"]');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.indeterminate =
+            !allVisibleChecked && !noneVisibleChecked;
+    }
 }
 
 function positionExcelFilterPopup() {
-  const popup = document.getElementById("excelDataFilterPopup");
-  if (!popup || !excelFilterMenuAnchor || popup.classList.contains("hidden")) return;
+    const popup = document.getElementById("excelDataFilterPopup");
+    if (!popup || !excelFilterMenuAnchor || popup.classList.contains("hidden")) return;
 
-  const rect = excelFilterMenuAnchor.getBoundingClientRect();
+    const rect = excelFilterMenuAnchor.getBoundingClientRect();
 
-  popup.style.left = `${window.scrollX + rect.left}px`;
-  popup.style.top = `${window.scrollY + rect.bottom + 6}px`;
+    popup.style.left = `${window.scrollX + rect.left}px`;
+    popup.style.top = `${window.scrollY + rect.bottom + 6}px`;
 
-  const popupRect = popup.getBoundingClientRect();
-  const maxLeft = window.scrollX + window.innerWidth - popupRect.width - 12;
+    const popupRect = popup.getBoundingClientRect();
+    const maxLeft = window.scrollX + window.innerWidth - popupRect.width - 12;
 
-  if (window.scrollX + rect.left > maxLeft) {
-    popup.style.left = `${Math.max(12, maxLeft)}px`;
-  }
+    if (window.scrollX + rect.left > maxLeft) {
+        popup.style.left = `${Math.max(12, maxLeft)}px`;
+    }
 }
 
 function handleExcelFilterPopupInput(event) {
-  if (!excelFilterMenuState) return;
+    if (!excelFilterMenuState) return;
 
-  if (event.target.matches(".filter-search-input")) {
-    excelFilterMenuState.search = event.target.value || "";
-    renderExcelFilterPopup();
-  }
+    if (event.target.matches(".filter-search-input")) {
+        excelFilterMenuState.search = event.target.value || "";
+        renderExcelFilterPopup();
+    }
 }
 
 function handleExcelFilterPopupChange(event) {
-  if (!excelFilterMenuState) return;
+    if (!excelFilterMenuState) return;
 
-  const target = event.target;
+    const target = event.target;
 
-  if (target.matches('[data-role="select-all"]')) {
-    const visibleValues = getVisibleExcelFilterOptions();
+    if (target.matches('[data-role="select-all"]')) {
+        const visibleValues = getVisibleExcelFilterOptions();
 
-    if (target.checked) {
-      visibleValues.forEach((item) => excelFilterMenuState.selected.add(item.value));
-    } else {
-      visibleValues.forEach((item) => excelFilterMenuState.selected.delete(item.value));
+        if (target.checked) {
+            visibleValues.forEach((item) => excelFilterMenuState.selected.add(item.value));
+        } else {
+            visibleValues.forEach((item) => excelFilterMenuState.selected.delete(item.value));
+        }
+
+        renderExcelFilterPopup();
+        return;
     }
 
-    renderExcelFilterPopup();
-    return;
-  }
+    if (target.matches('[data-role="filter-value"]')) {
+        const value = target.value;
 
-  if (target.matches('[data-role="filter-value"]')) {
-    const value = target.value;
+        if (target.checked) {
+            excelFilterMenuState.selected.add(value);
+        } else {
+            excelFilterMenuState.selected.delete(value);
+        }
 
-    if (target.checked) {
-      excelFilterMenuState.selected.add(value);
-    } else {
-      excelFilterMenuState.selected.delete(value);
+        renderExcelFilterPopup();
     }
-
-    renderExcelFilterPopup();
-  }
 }
 
 function handleExcelFilterPopupClick(event) {
-  if (!excelFilterMenuState) return;
+    if (!excelFilterMenuState) return;
 
-  const actionButton = event.target.closest("[data-action]");
-  if (!actionButton) return;
+    const actionButton = event.target.closest("[data-action]");
+    if (!actionButton) return;
 
-  const action = actionButton.dataset.action;
+    const action = actionButton.dataset.action;
 
-  if (action === "cancel") {
-    closeExcelFilterMenu();
-    return;
-  }
+    if (action === "cancel") {
+        closeExcelFilterMenu();
+        return;
+    }
 
-  if (action === "clear") {
-    delete excelColumnFilters[excelFilterMenuState.header];
-    renderSheets(workbookData?.sheets || []);
-    closeExcelFilterMenu();
-    return;
-  }
+    if (action === "clear") {
+        delete excelColumnFilters[excelFilterMenuState.header];
+        renderSheets(workbookData?.sheets || []);
+        closeExcelFilterMenu();
+        return;
+    }
 
-  if (action === "ok") {
-    applyExcelFilterMenuSelection();
-  }
+    if (action === "ok") {
+        applyExcelFilterMenuSelection();
+    }
 }
 
 function applyExcelFilterMenuSelection() {
-  if (!excelFilterMenuState) return;
+    if (!excelFilterMenuState) return;
 
-  const allValues = getDistinctExcelColumnValues(
-    excelFilterMenuState.header
-  ).map((item) => item.value);
+    const allValues = getDistinctExcelColumnValues(
+        excelFilterMenuState.header
+    ).map((item) => item.value);
 
-  const allSelected =
-    excelFilterMenuState.selected.size === allValues.length &&
-    allValues.every((value) => excelFilterMenuState.selected.has(value));
+    const allSelected =
+        excelFilterMenuState.selected.size === allValues.length &&
+        allValues.every((value) => excelFilterMenuState.selected.has(value));
 
-  if (allSelected) {
-    delete excelColumnFilters[excelFilterMenuState.header];
-  } else {
-    excelColumnFilters[excelFilterMenuState.header] = new Set(
-      excelFilterMenuState.selected
-    );
-  }
+    if (allSelected) {
+        delete excelColumnFilters[excelFilterMenuState.header];
+    } else {
+        excelColumnFilters[excelFilterMenuState.header] = new Set(
+            excelFilterMenuState.selected
+        );
+    }
 
-  renderSheets(workbookData?.sheets || []);
-  closeExcelFilterMenu();
+    renderSheets(workbookData?.sheets || []);
+    closeExcelFilterMenu();
 }
 
 function createExcelTableHeader(header) {
-  const filterable = isExcelHeaderFilterable(header);
-  const active = hasExcelActiveFilter(header);
+    const filterable = isExcelHeaderFilterable(header);
+    const active = hasExcelActiveFilter(header);
 
-  return `
+    return `
     <th class="${active ? "filter-active-col" : ""}">
       <div class="th-wrap">
         <span class="th-label">${escapeHtml(header)}</span>
         ${filterable
-      ? `
+            ? `
             <button
               type="button"
               class="filter-trigger excel-data-filter-trigger ${active ? "active" : ""}"
@@ -2652,8 +2703,8 @@ function createExcelTableHeader(header) {
               ▾
             </button>
           `
-      : ""
-    }
+            : ""
+        }
       </div>
     </th>
   `;
@@ -2663,105 +2714,113 @@ function createExcelTableHeader(header) {
    EXCEL SEARCH + RENDER
 ========================= */
 function handleExcelSearch() {
-  currentExcelSearch = excelSearchInput.value.trim().toLowerCase();
-  activeSheetPanelId = null;
+    currentExcelSearch = excelSearchInput.value.trim().toLowerCase();
+    activeSheetPanelId = null;
 
-  if (!workbookData) return;
+    if (clearExcelSearchBtn) {
+        clearExcelSearchBtn.hidden = !excelSearchInput.value;
+    }
 
-  renderSheets(workbookData.sheets);
-  activatePanel("dataCard");
+    if (!workbookData) return;
+
+    renderSheets(workbookData.sheets);
+    activatePanel("dataCard");
 }
 
 function clearExcelSearch() {
-  excelSearchInput.value = "";
-  currentExcelSearch = "";
-  activeSheetPanelId = null;
+    excelSearchInput.value = "";
+    currentExcelSearch = "";
+    activeSheetPanelId = null;
 
-  if (!workbookData) return;
+    if (clearExcelSearchBtn) {
+        clearExcelSearchBtn.hidden = true;
+    }
 
-  renderSheets(workbookData.sheets);
-  activatePanel("dataCard");
+    if (!workbookData) return;
+
+    renderSheets(workbookData.sheets);
+    activatePanel("dataCard");
 }
 
 function buildRowSearchText(row, headers) {
-  const values = [];
+    const values = [];
 
-  headers.forEach((header) => {
-    const value = row[header];
-    if (value !== null && value !== undefined && value !== "") {
-      values.push(String(value));
+    headers.forEach((header) => {
+        const value = row[header];
+        if (value !== null && value !== undefined && value !== "") {
+            values.push(String(value));
+        }
+    });
+
+    if (row.__folderName) {
+        values.push(String(row.__folderName));
     }
-  });
 
-  if (row.__folderName) {
-    values.push(String(row.__folderName));
-  }
+    if (row.__excelRow) {
+        values.push(String(row.__excelRow));
+    }
 
-  if (row.__excelRow) {
-    values.push(String(row.__excelRow));
-  }
-
-  return values.join(" ").toLowerCase();
+    return values.join(" ").toLowerCase();
 }
 
 function rowMatchesKeyword(row, headers, keyword) {
-  if (!keyword) return true;
-  return buildRowSearchText(row, headers).includes(keyword);
+    if (!keyword) return true;
+    return buildRowSearchText(row, headers).includes(keyword);
 }
 
 function renderSheets(sheets) {
-  if (!Array.isArray(sheets) || sheets.length === 0) {
-    excelDataContainer.innerHTML = "<p>Không có dữ liệu để hiển thị</p>";
-    sheetTabs.innerHTML = "";
+    if (!Array.isArray(sheets) || sheets.length === 0) {
+        excelDataContainer.innerHTML = "<p>Không có dữ liệu để hiển thị</p>";
+        sheetTabs.innerHTML = "";
+        dataCard?.classList.remove("hidden");
+        updateSidebarAvailability();
+        return;
+    }
+
     dataCard?.classList.remove("hidden");
     updateSidebarAvailability();
-    return;
-  }
 
-  dataCard?.classList.remove("hidden");
-  updateSidebarAvailability();
+    const combinedHeaders = getCombinedExcelHeaders(sheets);
+    const combinedRows = getCombinedExcelRows(sheets);
+    const hasExcelFilters = hasAnyExcelActiveFilter();
 
-  const combinedHeaders = getCombinedExcelHeaders(sheets);
-  const combinedRows = getCombinedExcelRows(sheets);
-  const hasExcelFilters = hasAnyExcelActiveFilter();
+    const filteredRows = combinedRows.filter((row) =>
+        rowMatchesKeyword(row, combinedHeaders, currentExcelSearch) &&
+        rowMatchesExcelColumnFilters(row, combinedHeaders)
+    );
 
-  const filteredRows = combinedRows.filter((row) =>
-    rowMatchesKeyword(row, combinedHeaders, currentExcelSearch) &&
-    rowMatchesExcelColumnFilters(row, combinedHeaders)
-  );
-
-  if (currentExcelSearch || hasExcelFilters) {
-    if (filteredRows.length > 0) {
-      let status = `Tìm thấy ${filteredRows.length} dòng phù hợp.`;
-      if (hasExcelFilters) {
-        status += ` Đang áp dụng ${Object.keys(excelColumnFilters).length} filter cột.`;
-      }
-      excelSearchStatus.textContent = status;
+    if (currentExcelSearch || hasExcelFilters) {
+        if (filteredRows.length > 0) {
+            let status = `Tìm thấy ${filteredRows.length} dòng phù hợp.`;
+            if (hasExcelFilters) {
+                status += ` Đang áp dụng ${Object.keys(excelColumnFilters).length} filter cột.`;
+            }
+            excelSearchStatus.textContent = status;
+        } else {
+            excelSearchStatus.textContent = "Không có dữ liệu phù hợp với điều kiện lọc hiện tại.";
+        }
     } else {
-      excelSearchStatus.textContent = "Không có dữ liệu phù hợp với điều kiện lọc hiện tại.";
+        excelSearchStatus.textContent =
+            "Nhập từ khóa để lọc dữ liệu theo tất cả cột text.";
     }
-  } else {
-    excelSearchStatus.textContent =
-      "Nhập từ khóa để lọc dữ liệu theo tất cả cột text.";
-  }
 
-  sheetTabs.innerHTML = "";
+    sheetTabs.innerHTML = "";
 
-  const rowsToRender =
-    currentExcelSearch || hasExcelFilters ? filteredRows : combinedRows;
+    const rowsToRender =
+        currentExcelSearch || hasExcelFilters ? filteredRows : combinedRows;
 
-  const tableHead = combinedHeaders
-    .map((header) => createExcelTableHeader(header))
-    .join("");
+    const tableHead = combinedHeaders
+        .map((header) => createExcelTableHeader(header))
+        .join("");
 
-  const tableBody = rowsToRender
-    .map((row) => {
-      const cells = combinedHeaders.map((header) => createTableCell(header, row)).join("");
-      return `<tr>${cells}</tr>`;
-    })
-    .join("");
+    const tableBody = rowsToRender
+        .map((row) => {
+            const cells = combinedHeaders.map((header) => createTableCell(header, row)).join("");
+            return `<tr>${cells}</tr>`;
+        })
+        .join("");
 
-  excelDataContainer.innerHTML = `
+    excelDataContainer.innerHTML = `
     <div class="sheet-panel active" id="sheet-combined">
       <p class="sheet-meta">
         Tổng số dòng: <strong>${escapeHtml(rowsToRender.length)}</strong>
@@ -2782,63 +2841,534 @@ function renderSheets(sheets) {
 }
 
 function createTableCell(header, row) {
-  if (header === "Sketch Design") {
-    const images = Array.isArray(row.__images) ? row.__images : [];
+    if (header === "Sketch Design") {
+        const images = Array.isArray(row.__images) ? row.__images : [];
 
-    if (images.length === 0) {
-      return `<td class="image-cell"><span class="empty-value">Không có ảnh</span></td>`;
+        if (images.length === 0) {
+            return `<td class="image-cell"><span class="empty-value">Không có ảnh</span></td>`;
+        }
+
+        const imageHtml = images
+            .map(
+                (src, index) =>
+                    `<img src="${escapeAttribute(src)}" alt="Sketch ${index + 1}" class="previewable-image" />`
+            )
+            .join("");
+
+        return `<td class="image-cell"><div class="image-list">${imageHtml}</div></td>`;
     }
 
-    const imageHtml = images
-      .map(
-        (src, index) =>
-          `<img src="${escapeAttribute(src)}" alt="Sketch ${index + 1}" class="previewable-image" />`
-      )
-      .join("");
+    if (header === "Chi tiết") {
+        if (!row.__detailUrl) {
+            return `<td><span class="empty-value">Chưa map</span></td>`;
+        }
 
-    return `<td class="image-cell"><div class="image-list">${imageHtml}</div></td>`;
-  }
+        const folderId = row.__folderId || "";
 
-  if (header === "Chi tiết") {
-    if (!row.__detailUrl) {
-      return `<td><span class="empty-value">Chưa map</span></td>`;
-    }
-
-    return `
+        return `
       <td>
-        <a class="table-folder-link" href="${escapeAttribute(row.__detailUrl)}" target="_blank" rel="noopener noreferrer">
+        <button
+          type="button"
+          class="table-folder-link"
+          data-folder-id="${escapeAttribute(folderId)}"
+          title="Xem chi tiết folder"
+        >
           ${escapeHtml(row.__folderName || "Chi tiết")}
-        </a>
+        </button>
       </td>
     `;
-  }
+    }
 
-  const value = row[header];
+    const value = row[header];
 
-  if (value === null || value === undefined || value === "") {
-    return `<td><span class="empty-value">-</span></td>`;
-  }
+    if (value === null || value === undefined || value === "") {
+        return `<td><span class="empty-value">-</span></td>`;
+    }
 
-  return `<td>${escapeHtml(value)}</td>`;
+    return `<td>${escapeHtml(value)}</td>`;
 }
 
 /* =========================
    UTIL
 ========================= */
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function escapeAttribute(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;");
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;");
+}
+
+/* =========================
+   FOLDER DETAIL MODAL
+========================= */
+const folderDetailModal = document.getElementById("folderDetailModal");
+const folderModalCloseBtn = document.getElementById("folderModalCloseBtn");
+const folderModalTitle = document.getElementById("folderModalTitle");
+const folderModalMeta = document.getElementById("folderModalMeta");
+const folderModalGrid = document.getElementById("folderModalGrid");
+const folderModalSearch = document.getElementById("folderModalSearch");
+const folderDownloadAllBtn = document.getElementById("folderDownloadAllBtn");
+const folderFileLightbox = document.getElementById("folderFileLightbox");
+const folderLightboxImg = document.getElementById("folderLightboxImg");
+const folderLightboxClose = document.getElementById("folderLightboxClose");
+
+// Intercept ALL clicks on folder detail buttons
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".table-folder-link, .detail-link-btn");
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Try data-folder-id first (most reliable)
+    let folderId = btn.dataset.folderId || "";
+
+    // Fallback: parse from href if link element
+    if (!folderId && btn.tagName === "A") {
+        const href = btn.getAttribute("href") || "";
+        const m = href.match(/\/folder\/([a-f0-9\-]+)/i);
+        if (m) folderId = m[1];
+    }
+
+    if (!folderId) return;
+    openFolderDetailModal(folderId);
+});
+
+async function openFolderDetailModal(folderId) {
+    if (!folderDetailModal) return;
+
+    // Show modal with loading state
+    folderModalTitle.textContent = "Đang tải...";
+    folderModalMeta.textContent = "";
+    folderModalGrid.innerHTML = `
+        <div class="folder-modal-loading">
+            <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                    stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            Đang tải danh sách file...
+        </div>
+    `;
+    folderModalSearch.value = "";
+    folderDownloadAllBtn.href = "#";
+    folderDetailModal.classList.remove("hidden");
+    document.body.classList.add("modal-open");
+
+    try {
+        const response = await fetch(`${basePath}/api/folder/${folderId}`);
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            folderModalGrid.innerHTML = `
+                <div class="folder-modal-empty">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    ${escapeHtml(result.message || "Không tải được thông tin folder")}
+                </div>
+            `;
+            return;
+        }
+
+        const folder = result.data;
+        folderModalTitle.textContent = folder.name;
+        folderModalMeta.textContent = `${folder.fileCount} file`;
+        folderDownloadAllBtn.href = folder.downloadAllUrl;
+        folderDownloadAllBtn.setAttribute("download", `${folder.name}.zip`);
+
+        renderFolderModalFiles(folder.files);
+        loadPdfThumbnails(folderModalGrid);
+    } catch (err) {
+        console.error(err);
+        folderModalGrid.innerHTML = `
+            <div class="folder-modal-empty">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Có lỗi khi tải thông tin folder
+            </div>
+        `;
+    }
+}
+
+function renderFolderModalFiles(files) {
+    if (!Array.isArray(files) || files.length === 0) {
+        folderModalGrid.innerHTML = `
+            <div class="folder-modal-empty">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                        stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Folder này chưa có file nào
+            </div>
+        `;
+        return;
+    }
+
+    folderModalGrid.innerHTML = files.map((file) => {
+        const ext = (file.ext || "").replace(".", "").toLowerCase();
+        const extLabel = ext ? ext.toUpperCase() : "FILE";
+
+        const previewArea = file.isImage
+            ? `<div class="fmc-thumb-wrap" data-preview-url="${escapeAttribute(file.viewUrl)}">
+                    <img class="fmc-thumb" src="${escapeAttribute(file.viewUrl)}" alt="${escapeAttribute(file.name)}" loading="lazy" />
+               </div>`
+            : `<div class="fmc-icon-wrap ${file.isPdf ? 'fmc-pdf-container' : ''}" ${file.isPdf ? `data-pdf-url="${escapeAttribute(file.viewUrl)}"` : ''}>
+                    ${file.isPdf
+                ? `<canvas class="pdf-canvas" style="display: none;"></canvas>
+                           <img class="pdf-thumb-img fmc-thumb" style="display: none;" alt="${escapeAttribute(file.name)}" />
+                           <div class="pdf-fallback-icon">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.6"/>
+                                    <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.6"/>
+                                </svg>
+                                <span class="fmc-ext-badge pdf">PDF</span>
+                           </div>`
+                : `<svg viewBox="0 0 24 24" fill="none">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.6"/>
+                            <path d="M14 2v6h6M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                           </svg>
+                           <span class="fmc-ext-badge ${escapeAttribute(ext)}">${escapeHtml(extLabel)}</span>`
+            }
+               </div>`;
+
+        return `
+            <div class="fmc" data-file-name="${escapeAttribute(file.name.toLowerCase())}">
+                ${previewArea}
+                <div class="fmc-footer">
+                    <span class="fmc-name" title="${escapeAttribute(file.name)}">${escapeHtml(file.name)}</span>
+                    <span class="fmc-size">${file.sizeKb}KB</span>
+                    <a class="fmc-dl-btn" href="${escapeAttribute(file.downloadUrl)}" title="Tải về ${escapeAttribute(file.name)}" download="${escapeAttribute(file.name)}">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+function closeFolderDetailModal() {
+    if (!folderDetailModal) return;
+    folderDetailModal.classList.add("hidden");
+    document.body.classList.remove("modal-open");
+    closeFolderLightbox();
+}
+
+// Modal search
+folderModalSearch?.addEventListener("input", () => {
+    const keyword = folderModalSearch.value.trim().toLowerCase();
+    const cards = folderModalGrid.querySelectorAll(".fmc");
+
+    cards.forEach((card) => {
+        const name = card.dataset.fileName || "";
+        card.style.display = (!keyword || name.includes(keyword)) ? "" : "none";
+    });
+});
+
+// Close modal
+folderModalCloseBtn?.addEventListener("click", closeFolderDetailModal);
+folderDetailModal?.addEventListener("click", (e) => {
+    if (e.target === folderDetailModal) closeFolderDetailModal();
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && folderDetailModal && !folderDetailModal.classList.contains("hidden")) {
+        if (folderFileLightbox && !folderFileLightbox.classList.contains("hidden")) {
+            closeFolderLightbox();
+        } else {
+            closeFolderDetailModal();
+        }
+    }
+});
+
+// Thumbnail click → lightbox
+folderModalGrid?.addEventListener("click", (e) => {
+    const thumbWrap = e.target.closest(".fmc-thumb-wrap");
+    if (!thumbWrap) return;
+    const url = thumbWrap.dataset.previewUrl;
+    if (!url) return;
+    openFolderLightbox(url);
+});
+
+function openFolderLightbox(url) {
+    if (!folderFileLightbox || !folderLightboxImg) return;
+    folderLightboxImg.src = url;
+    folderFileLightbox.classList.remove("hidden");
+}
+
+function closeFolderLightbox() {
+    if (!folderFileLightbox) return;
+    folderFileLightbox.classList.add("hidden");
+    if (folderLightboxImg) folderLightboxImg.src = "";
+}
+
+folderLightboxClose?.addEventListener("click", closeFolderLightbox);
+folderFileLightbox?.addEventListener("click", (e) => {
+    if (e.target === folderFileLightbox) closeFolderLightbox();
+});
+
+// Intercept downloads inside folder detail modal to use showSaveFilePicker if available
+folderModalGrid?.addEventListener("click", async (e) => {
+    const dlBtn = e.target.closest(".fmc-dl-btn");
+    if (!dlBtn) return;
+
+    if (typeof window.showSaveFilePicker === "function") {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = dlBtn.getAttribute("href");
+        const filename = dlBtn.getAttribute("download") || "file";
+        await downloadWithSaveFilePicker(url, filename);
+    }
+});
+
+folderDownloadAllBtn?.addEventListener("click", async (e) => {
+    if (typeof window.showSaveFilePicker === "function") {
+        const url = folderDownloadAllBtn.getAttribute("href");
+        if (!url || url === "#") return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        const filename = folderDownloadAllBtn.getAttribute("download") || "folder.zip";
+        await downloadWithSaveFilePicker(url, filename);
+    }
+});
+
+async function downloadWithSaveFilePicker(url, filename) {
+    let fileHandle;
+    try {
+        fileHandle = await window.showSaveFilePicker({
+            suggestedName: filename,
+        });
+    } catch (err) {
+        if (err.name === "AbortError") return;
+        console.warn("showSaveFilePicker failed, falling back to default download:", err);
+        fallbackDownload(url, filename);
+        return;
+    }
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const writable = await fileHandle.createWritable();
+        await response.body.pipeTo(writable);
+    } catch (err) {
+        console.error("Lỗi khi ghi file:", err);
+        alert("Không thể tải file: " + err.message);
+    }
+}
+
+function fallbackDownload(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// PDF.js global setup
+if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${basePath}/static/js/pdf.worker.min.js`;
+}
+
+// Click on PDF card (excluding the download button) -> open PDF in new tab
+folderModalGrid?.addEventListener("click", (e) => {
+    const pdfWrap = e.target.closest(".fmc-pdf-container");
+    if (!pdfWrap || e.target.closest(".fmc-dl-btn")) return;
+    const url = pdfWrap.dataset.pdfUrl;
+    if (!url) return;
+    window.open(url, "_blank");
+});
+
+async function loadPdfThumbnails(container) {
+    if (!container || !window.pdfjsLib) return;
+    const pdfWrappers = container.querySelectorAll(".fmc-pdf-container");
+
+    pdfWrappers.forEach(async (wrapper) => {
+        const pdfUrl = wrapper.dataset.pdfUrl;
+        if (!pdfUrl) return;
+
+        const canvas = wrapper.querySelector(".pdf-canvas");
+        const img = wrapper.querySelector(".pdf-thumb-img");
+        const fallback = wrapper.querySelector(".pdf-fallback-icon");
+        if (!canvas || !img || !fallback) return;
+
+        try {
+            const loadingTask = window.pdfjsLib.getDocument({
+                url: pdfUrl,
+                disableRange: true,
+                disableAutoFetch: true
+            });
+            const pdf = await loadingTask.promise;
+            const page = await pdf.getPage(1);
+
+            const desiredWidth = 140;
+            const viewport = page.getViewport({ scale: 1 });
+            const scale = desiredWidth / viewport.width;
+            const scaledViewport = page.getViewport({ scale: scale });
+
+            canvas.width = scaledViewport.width;
+            canvas.height = scaledViewport.height;
+
+            const context = canvas.getContext("2d");
+            const renderContext = {
+                canvasContext: context,
+                viewport: scaledViewport,
+            };
+
+            await page.render(renderContext).promise;
+
+            img.src = canvas.toDataURL("image/png");
+
+            // Set styles to fit container beautifully
+            img.style.width = "100%";
+            img.style.height = "100%";
+            img.style.objectFit = "cover";
+            img.style.padding = "0";
+
+            wrapper.style.cursor = "pointer";
+            wrapper.title = "Click để mở xem PDF";
+
+            img.style.display = "block";
+            fallback.style.display = "none";
+        } catch (err) {
+            console.error("Failed to render PDF thumbnail:", err);
+        }
+    });
+}
+
+
+const topNavbarUserName = document.getElementById("topNavbarUserName");
+const topNavbarUserAvatar = document.getElementById("topNavbarUserAvatar");
+
+function updateTopNavbarUser(user) {
+    if (!user) return;
+
+    const displayName = user.fullName?.trim() || user.email || "User";
+    const avatarText = (displayName.charAt(0) || "U").toUpperCase();
+
+    if (topNavbarUserName) {
+        topNavbarUserName.textContent = displayName;
+    }
+
+    if (topNavbarUserAvatar) {
+        topNavbarUserAvatar.textContent = avatarText;
+    }
+}
+
+
+const helpModal = document.getElementById("helpModal");
+const openHelpModalBtn = document.getElementById("openHelpModalBtn");
+const closeHelpModalBtn = document.getElementById("closeHelpModalBtn");
+const closeHelpModalFooterBtn = document.getElementById("closeHelpModalFooterBtn");
+const helpModalBackdrop = document.getElementById("helpModalBackdrop");
+const helpMessageInput = document.getElementById("helpMessageInput");
+const helpModalStatus = document.getElementById("helpModalStatus");
+const sendHelpRequestBtn = document.getElementById("sendHelpRequestBtn");
+
+function openHelpModal() {
+    if (!helpModal) return;
+    helpModal.classList.remove("hidden");
+    document.body.classList.add("modal-open");
+    if (helpModalStatus) helpModalStatus.textContent = "";
+    setTimeout(() => {
+        helpMessageInput?.focus();
+    }, 50);
+}
+
+function closeHelpModal() {
+    if (!helpModal) return;
+    helpModal.classList.add("hidden");
+    document.body.classList.remove("modal-open");
+}
+
+openHelpModalBtn?.addEventListener("click", openHelpModal);
+closeHelpModalBtn?.addEventListener("click", closeHelpModal);
+closeHelpModalFooterBtn?.addEventListener("click", closeHelpModal);
+helpModalBackdrop?.addEventListener("click", closeHelpModal);
+
+document.querySelectorAll(".help-quick-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const value = btn.dataset.helpValue || "";
+        if (!helpMessageInput) return;
+
+        if (helpMessageInput.value.trim()) {
+            helpMessageInput.value += "\n" + value;
+        } else {
+            helpMessageInput.value = value;
+        }
+
+        helpMessageInput.focus();
+    });
+});
+
+sendHelpRequestBtn?.addEventListener("click", async () => {
+    const message = helpMessageInput?.value.trim() || "";
+
+    if (!message) {
+        if (helpModalStatus) {
+            helpModalStatus.textContent = "Vui lòng nhập nội dung cần hỗ trợ.";
+        }
+        return;
+    }
+
+    // Tạm thời hiển thị trạng thái local
+    if (helpModalStatus) {
+        helpModalStatus.textContent = "Đã ghi nhận yêu cầu hỗ trợ của bạn.";
+    }
+
+    // Nếu sau này có API thì thay bằng fetch("/api/help-request", ...)
+    console.log("HELP REQUEST:", message);
+
+    setTimeout(() => {
+        closeHelpModal();
+        if (helpMessageInput) helpMessageInput.value = "";
+        if (helpModalStatus) helpModalStatus.textContent = "";
+    }, 900);
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && helpModal && !helpModal.classList.contains("hidden")) {
+        closeHelpModal();
+    }
+});
+
+
+
+
+
+function updateNavbarFromButton(button) {
+    if (!button) return;
+
+    const title = button.dataset.navTitle || "Pattern Manual";
+    const subtitle =
+        button.dataset.navSubtitle || "Quản lý dữ liệu, hình ảnh và phân quyền người dùng";
+
+    if (topNavbarTitle) {
+        topNavbarTitle.textContent = title;
+    }
+
+    if (topNavbarSubtitle) {
+        topNavbarSubtitle.textContent = subtitle;
+    }
 }
 
 
 
+
+const activeNavButton = document.querySelector(".sidebar-nav-btn.active");
+updateNavbarFromButton(activeNavButton);
