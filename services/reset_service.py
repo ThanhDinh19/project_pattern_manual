@@ -1,12 +1,54 @@
 from __future__ import annotations
 
+import os
+import stat
 import shutil
+from pathlib import Path
 from typing import Any
 
 from services.excel_service import restore_state_from_mysql
 from services.folder_service import restore_folder_state_from_disk
 from utils.db import EXCEL_IMAGE_DIR, FOLDER_IMPORT_DIR, get_db_connection
 from utils.helpers import STATE, clear_all_state
+
+def _force_delete_dir(path_obj: Path) -> None:
+    if not path_obj.exists():
+        return
+    def remove_readonly(func, path, excinfo):
+        try:
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        except Exception:
+            pass
+    try:
+        shutil.rmtree(path_obj, onerror=remove_readonly)
+    except Exception:
+        try:
+            shutil.rmtree(path_obj, ignore_errors=True)
+        except Exception:
+            pass
+
+
+def _collect_folder_ids_from_state(customer: str, season: str | None = None) -> list[str]:
+    folder_ids = []
+    cust_lower = customer.strip().lower()
+    seas_lower = season.strip().lower() if season else None
+
+    for workbook in STATE.get("imports", []):
+        for sheet in workbook.get("sheets", []):
+            for row in sheet.get("rows", []):
+                row_cust = str(row.get("Customer") or "").strip().lower()
+                row_seas = str(row.get("Season") or "").strip().lower()
+
+                match = (row_cust == cust_lower)
+                if match and seas_lower:
+                    match = (row_seas == seas_lower)
+
+                if match:
+                    fid = row.get("__folderId")
+                    if fid:
+                        folder_ids.append(fid)
+    return list(set(folder_ids))
 
 
 def hard_reset_all_data() -> None:
@@ -35,10 +77,17 @@ def hard_reset_all_data() -> None:
     for path_obj in [FOLDER_IMPORT_DIR, EXCEL_IMAGE_DIR]:
         try:
             if path_obj.exists():
-                shutil.rmtree(path_obj, ignore_errors=True)
-            path_obj.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            pass
+                for child in path_obj.iterdir():
+                    try:
+                        if child.is_dir():
+                            _force_delete_dir(child)
+                        else:
+                            os.chmod(child, stat.S_IWRITE)
+                            child.unlink(missing_ok=True)
+                    except Exception as child_err:
+                        print(f"[ERROR] Failed to delete child {child}: {child_err}")
+        except Exception as e:
+            print(f"[ERROR] Failed to delete contents of {path_obj}: {e}")
 
 
 
@@ -57,6 +106,7 @@ def _hard_reset_rows(
     row_where_params: tuple[Any, ...],
     joined_where_sql: str,
     joined_where_params: tuple[Any, ...],
+    folder_ids: list[str] = [],
 ) -> dict[str, int]:
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -176,10 +226,20 @@ def _hard_reset_rows(
     for import_id in removed_import_ids:
         try:
             image_dir = EXCEL_IMAGE_DIR / import_id
-            if image_dir.exists():
-                shutil.rmtree(image_dir, ignore_errors=True)
+            _force_delete_dir(image_dir)
         except Exception:
             pass
+
+    for fid in folder_ids:
+        folder = STATE.get("folder_index", {}).get(fid)
+        if folder and "path" in folder:
+            try:
+                folder_path = Path(folder["path"])
+                relative = folder_path.relative_to(FOLDER_IMPORT_DIR)
+                root_dir = FOLDER_IMPORT_DIR / relative.parts[0]
+                _force_delete_dir(root_dir)
+            except Exception:
+                pass
 
     _reload_shared_state_after_partial_reset()
     return {
@@ -194,11 +254,13 @@ def hard_reset_by_customer(customer: str) -> dict[str, int]:
     customer = str(customer or "").strip()
     if not customer:
         return {"removedRowCount": 0, "affectedImportCount": 0, "removedImportCount": 0}
+    folder_ids = _collect_folder_ids_from_state(customer)
     return _hard_reset_rows(
         row_where_sql="customer = %s",
         row_where_params=(customer,),
         joined_where_sql="pr.customer = %s",
         joined_where_params=(customer,),
+        folder_ids=folder_ids,
     )
 
 
@@ -208,9 +270,11 @@ def hard_reset_by_customer_and_season(customer: str, season: str) -> dict[str, i
     season = str(season or "").strip()
     if not customer or not season:
         return {"removedRowCount": 0, "affectedImportCount": 0, "removedImportCount": 0}
+    folder_ids = _collect_folder_ids_from_state(customer, season)
     return _hard_reset_rows(
         row_where_sql="customer = %s AND season = %s",
         row_where_params=(customer, season),
         joined_where_sql="pr.customer = %s AND pr.season = %s",
         joined_where_params=(customer, season),
+        folder_ids=folder_ids,
     )

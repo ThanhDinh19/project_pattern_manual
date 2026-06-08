@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import Flask, redirect
+from flask import Flask, redirect, jsonify
 
 from routes.admin_routes import register_admin_routes
 from routes.auth_routes import register_auth_routes
@@ -21,7 +21,11 @@ load_dotenv(BASE_DIR / ".env")
 def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
-    app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024
+    app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024 * 1024  # 5 GB
+
+    @app.errorhandler(413)
+    def request_entity_too_large(error):
+        return jsonify({"success": False, "message": "Thư mục tải lên quá lớn (tối đa 5GB)"}), 413
 
     @app.get("/")
     def root():
