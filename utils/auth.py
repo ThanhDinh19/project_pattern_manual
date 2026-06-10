@@ -7,23 +7,31 @@ from flask import jsonify, redirect, session, url_for
 from utils.db import get_db_connection
 
 
+def row_to_dict(cursor, row):
+    if not row:
+        return None
+    columns = [col[0] for col in cursor.description]
+    return dict(zip(columns, row))
+
+
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
         return None
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
+
     try:
         cursor.execute(
-            "SELECT * FROM users WHERE id = %s AND is_active = 1",
+            "SELECT * FROM users WHERE id = ? AND is_active = 1",
             (user_id,),
         )
-        return cursor.fetchone()
+        row = cursor.fetchone()
+        return row_to_dict(cursor, row)
     finally:
         cursor.close()
         conn.close()
-
 
 
 def user_to_public_payload(user: dict) -> dict:
@@ -44,7 +52,6 @@ def user_to_public_payload(user: dict) -> dict:
     }
 
 
-
 def login_required_page(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -53,7 +60,6 @@ def login_required_page(fn):
         return fn(*args, **kwargs)
 
     return wrapper
-
 
 
 def login_required_api(fn):
@@ -65,7 +71,6 @@ def login_required_api(fn):
         return fn(*args, **kwargs)
 
     return wrapper
-
 
 
 def permission_required_api(permission_name: str):
@@ -86,7 +91,6 @@ def permission_required_api(permission_name: str):
         return wrapper
 
     return decorator
-
 
 
 def permission_required_page(permission_name: str):

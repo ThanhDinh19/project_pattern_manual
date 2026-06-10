@@ -6,7 +6,7 @@ from flask import jsonify, request
 from werkzeug.utils import secure_filename
 
 from services.audit_service import write_audit_log
-from services.excel_service import allowed_file, parse_excel_file, save_workbook_to_mysql
+from services.excel_service import allowed_file, parse_excel_file, save_workbook_to_sqlserver
 from utils.db import BASE_PATH, UPLOAD_DIR
 from utils.helpers import STATE, get_public_imports_state
 
@@ -28,7 +28,7 @@ def register_excel_routes(app):
             result = parse_excel_file(Path(file_path))
             full_workbook = next((item for item in STATE["imports"] if item["id"] == result["id"]), None)
             if full_workbook:
-                save_workbook_to_mysql(full_workbook)
+                save_workbook_to_sqlserver(full_workbook)
 
             write_audit_log(
                 action_type="IMPORT_EXCEL",

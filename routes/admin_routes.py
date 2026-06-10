@@ -8,6 +8,7 @@ from utils.auth import (
     login_required_page,
     permission_required_api,
     permission_required_page,
+    row_to_dict,
 )
 from utils.db import BASE_PATH, get_db_connection
 from utils.helpers import normalize_email
@@ -25,7 +26,7 @@ def register_admin_routes(app):
     @permission_required_api("can_manage_users")
     def admin_list_users():
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
             cursor.execute(
                 """
@@ -38,7 +39,8 @@ def register_admin_routes(app):
                 ORDER BY created_at DESC, id DESC
                 """
             )
-            users = cursor.fetchall() or []
+            db_rows = cursor.fetchall() or []
+            users = [row_to_dict(cursor, r) for r in db_rows]
             return jsonify(
                 {
                     "success": True,
@@ -104,7 +106,7 @@ def register_admin_routes(app):
                     can_view_data, can_reset_data, can_manage_users,
                     can_view_audit_logs
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     email,
@@ -142,17 +144,17 @@ def register_admin_routes(app):
                 """
                 UPDATE users
                 SET
-                    full_name = %s,
-                    is_active = %s,
-                    is_admin = %s,
-                    can_import_excel = %s,
-                    can_import_folder = %s,
-                    can_search_image = %s,
-                    can_view_data = %s,
-                    can_reset_data = %s,
-                    can_manage_users = %s,
-                    can_view_audit_logs = %s
-                WHERE id = %s
+                    full_name = ?,
+                    is_active = ?,
+                    is_admin = ?,
+                    can_import_excel = ?,
+                    can_import_folder = ?,
+                    can_search_image = ?,
+                    can_view_data = ?,
+                    can_reset_data = ?,
+                    can_manage_users = ?,
+                    can_view_audit_logs = ?
+                WHERE id = ?
                 """,
                 (
                     str(payload.get("full_name", "")).strip(),
@@ -188,7 +190,7 @@ def register_admin_routes(app):
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "UPDATE users SET password_hash = %s WHERE id = %s",
+                "UPDATE users SET password_hash = ? WHERE id = ?",
                 (password_hash, user_id),
             )
             conn.commit()
@@ -202,11 +204,11 @@ def register_admin_routes(app):
     @permission_required_api("can_view_audit_logs")
     def admin_audit_logs():
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                SELECT
+                SELECT TOP 300
                     id, user_id, user_email,
                     action_type, action_label,
                     target_type, target_value,
@@ -214,10 +216,10 @@ def register_admin_routes(app):
                     created_at
                 FROM audit_logs
                 ORDER BY created_at DESC, id DESC
-                LIMIT 300
                 """
             )
-            rows = cursor.fetchall() or []
+            db_rows = cursor.fetchall() or []
+            rows = [row_to_dict(cursor, r) for r in db_rows]
             return jsonify({"success": True, "data": {"logs": rows}})
         finally:
             cursor.close()

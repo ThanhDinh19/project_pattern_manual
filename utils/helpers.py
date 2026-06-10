@@ -7,7 +7,6 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from utils.db import FOLDER_IMPORT_DIR
 
 STATE: dict[str, Any] = {
     "imports": [],

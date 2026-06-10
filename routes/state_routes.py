@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask import jsonify, request
 
-from services.excel_service import restore_state_from_mysql, search_by_uploaded_image
+from services.excel_service import restore_state_from_sqlserver, search_by_uploaded_image
 from services.folder_service import restore_folder_state_from_disk
 from utils.db import BASE_PATH
 from utils.helpers import STATE, get_public_imports_state, get_public_workbook_state, get_reset_options
@@ -25,7 +25,7 @@ def register_state_routes(app):
     @app.get(f"{BASE_PATH}/api/state")
     def get_state():
         if not STATE["imports"]:
-            restore_state_from_mysql()
+            restore_state_from_sqlserver()
         if STATE["imports"] and not STATE["folder_index"]:
             restore_folder_state_from_disk()
 

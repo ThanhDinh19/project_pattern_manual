@@ -22,16 +22,21 @@ def write_audit_log(
 
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
         cursor.execute(
             """
             INSERT INTO audit_logs (
-                user_id, user_email,
-                action_type, action_label,
-                target_type, target_value,
-                details_json, ip_address
+                user_id,
+                user_email,
+                action_type,
+                action_label,
+                target_type,
+                target_value,
+                details_json,
+                ip_address
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user_id,
