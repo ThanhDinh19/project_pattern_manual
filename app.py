@@ -8,7 +8,7 @@ from routes.excel_routes import register_excel_routes
 from routes.folder_routes import register_folder_routes
 from routes.reset_routes import register_reset_routes
 from routes.state_routes import register_state_routes
-from services.excel_service import restore_state_from_mysql
+from services.excel_service import restore_state_from_sqlserver
 from services.folder_service import restore_folder_state_from_disk
 from utils.db import BASE_PATH
 import os
@@ -45,10 +45,10 @@ app = create_app()
 
 if __name__ == "__main__":
     try:
-        restore_state_from_mysql()
-        print("[OK] MySQL state restored successfully")
+        restore_state_from_sqlserver()
+        print("[OK] SQL Server state restored successfully")
     except Exception as e:
-        print(f"[WARN] Failed to restore MySQL state: {e}")
+        print(f"[WARN] Failed to restore SQL Server state: {e}")
     
     try:
         restore_folder_state_from_disk()

@@ -8,6 +8,7 @@ from utils.auth import (
     login_required_api,
     login_required_page,
     user_to_public_payload,
+    row_to_dict,
 )
 from utils.db import BASE_PATH, get_db_connection
 from utils.helpers import normalize_email
@@ -28,13 +29,14 @@ def register_auth_routes(app):
             return jsonify({"success": False, "message": "Thiếu email hoặc mật khẩu"}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         try:
             cursor.execute(
-                "SELECT * FROM users WHERE email = %s AND is_active = 1",
+                "SELECT * FROM users WHERE email = ? AND is_active = 1",
                 (email,),
             )
-            user = cursor.fetchone()
+            row = cursor.fetchone()
+            user = row_to_dict(cursor, row)
             if not user or not check_password_hash(user["password_hash"], password):
                 return jsonify({"success": False, "message": "Sai email hoặc mật khẩu"}), 401
 

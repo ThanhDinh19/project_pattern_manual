@@ -24,7 +24,6 @@ def pil_to_data_url(image: Image.Image, max_width: int = 240) -> str:
     return f"data:image/png;base64,{base64_string}"
 
 
-
 def normalize_image(image: Image.Image) -> Image.Image:
     image = ImageOps.exif_transpose(image)
     if image.mode in ("RGBA", "LA"):
@@ -41,12 +40,10 @@ def normalize_image(image: Image.Image) -> Image.Image:
     return image
 
 
-
 def load_normalized_image_from_bytes(image_bytes: bytes) -> Image.Image:
     with Image.open(BytesIO(image_bytes)) as img:
         normalized = normalize_image(img)
         return normalized.copy()
-
 
 
 def build_compare_gray_png(image: Image.Image, size: tuple[int, int] = (128, 128)) -> bytes:
@@ -54,7 +51,6 @@ def build_compare_gray_png(image: Image.Image, size: tuple[int, int] = (128, 128
     output = BytesIO()
     compare_img.save(output, format="PNG", optimize=True)
     return output.getvalue()
-
 
 
 def compute_dhash(image: Image.Image, hash_size: int = 16) -> int:
@@ -71,10 +67,8 @@ def compute_dhash(image: Image.Image, hash_size: int = 16) -> int:
     return value
 
 
-
 def hamming_distance(left: int, right: int) -> int:
     return (left ^ right).bit_count()
-
 
 
 def pixel_similarity(compare_a_png: bytes, compare_b_png: bytes) -> float:
@@ -85,14 +79,12 @@ def pixel_similarity(compare_a_png: bytes, compare_b_png: bytes) -> float:
         return max(0.0, min(1.0, similarity))
 
 
-
 def build_image_signature(image_bytes: bytes) -> dict[str, Any]:
     normalized = load_normalized_image_from_bytes(image_bytes)
     return {
         "hash": compute_dhash(normalized),
         "compare_png": build_compare_gray_png(normalized),
     }
-
 
 
 def image_bytes_to_record(image_bytes: bytes) -> dict[str, Any]:
@@ -102,7 +94,6 @@ def image_bytes_to_record(image_bytes: bytes) -> dict[str, Any]:
         "hash": compute_dhash(normalized),
         "compare_png": build_compare_gray_png(normalized),
     }
-
 
 
 def save_excel_image_file(
@@ -131,12 +122,10 @@ def save_excel_image_file(
     }
 
 
-
 def extract_images_by_row(ws, import_id: str, sheet_name: str) -> dict[int, list[dict[str, Any]]]:
     images_by_row: dict[int, list[dict[str, Any]]] = defaultdict(list)
 
-    for image in enumerate(getattr(ws, "_images", [])):
-        image_index, image_obj = image
+    for image_index, image_obj in enumerate(getattr(ws, "_images", [])):
         try:
             row_index = image_obj.anchor._from.row + 1
             image_bytes = image_obj._data()
@@ -153,7 +142,6 @@ def extract_images_by_row(ws, import_id: str, sheet_name: str) -> dict[int, list
     return images_by_row
 
 
-
 def clean_row_for_search(row_data: dict[str, Any]) -> dict[str, Any]:
     clean = {}
     for key, value in row_data.items():
@@ -163,10 +151,11 @@ def clean_row_for_search(row_data: dict[str, Any]) -> dict[str, Any]:
     return clean
 
 
-
 def compare_signature(query_signature: dict[str, Any], target_item: dict[str, Any]) -> float:
     hash_size = 16 * 16
-    hash_similarity = 1.0 - (hamming_distance(query_signature["hash"], target_item["hash"]) / hash_size)
+    hash_similarity = 1.0 - (
+        hamming_distance(query_signature["hash"], target_item["hash"]) / hash_size
+    )
     img_similarity = pixel_similarity(query_signature["compare_png"], target_item["compare_png"])
     score = (hash_similarity * 0.6) + (img_similarity * 0.4)
     return max(0.0, min(1.0, score))

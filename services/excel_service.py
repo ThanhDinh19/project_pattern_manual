@@ -30,6 +30,26 @@ from utils.helpers import (
 )
 
 
+def _rows_to_dicts(cursor, rows):
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in rows]
+
+
+def _fetchall_dict(cursor):
+    rows = cursor.fetchall()
+    if not rows:
+        return []
+    return _rows_to_dicts(cursor, rows)
+
+
+def _fetchone_dict(cursor):
+    row = cursor.fetchone()
+    if not row:
+        return None
+    columns = [col[0] for col in cursor.description]
+    return dict(zip(columns, row))
+
+
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -139,14 +159,15 @@ def parse_excel_file(file_path: Path) -> dict[str, Any]:
 
 
 
-def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
+def save_workbook_to_sqlserver(workbook_data: dict[str, Any]) -> None:
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
         cursor.execute(
             """
             INSERT INTO excel_imports (id, file_name, sheet_count, total_rows, image_index_count)
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
                 workbook_data["id"],
@@ -160,8 +181,10 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
         for sheet in workbook_data.get("sheets", []):
             cursor.execute(
                 """
+                SET NOCOUNT ON;
                 INSERT INTO excel_sheets (import_id, sheet_name, header_row, row_count)
-                VALUES (%s, %s, %s, %s)
+                VALUES (?, ?, ?, ?);
+                SELECT SCOPE_IDENTITY() AS id;
                 """,
                 (
                     workbook_data["id"],
@@ -170,11 +193,13 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
                     sheet.get("rowCount", 0),
                 ),
             )
-            sheet_id = cursor.lastrowid
+            sheet_id_row = cursor.fetchone()
+            sheet_id = int(sheet_id_row[0])
 
             for row in sheet.get("rows", []):
                 extra_json = {
-                    k: v for k, v in row.items() if not k.startswith("__") and k not in STANDARD_HEADERS
+                    k: v for k, v in row.items()
+                    if not k.startswith("__") and k not in STANDARD_HEADERS
                 }
 
                 row_no = row.get("No")
@@ -183,13 +208,15 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
 
                 cursor.execute(
                     """
+                    SET NOCOUNT ON;
                     INSERT INTO pattern_rows (
                         import_id, sheet_id, excel_row,
                         row_no, customer, season, staff,
                         style_no, style_name, product, categories, gender,
                         extra_json, folder_id, folder_name, detail_url
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    SELECT SCOPE_IDENTITY() AS id;
                     """,
                     (
                         workbook_data["id"],
@@ -210,18 +237,22 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
                         row.get("__detailUrl"),
                     ),
                 )
-                pattern_row_id = cursor.lastrowid
+                pattern_row_id_row = cursor.fetchone()
+                pattern_row_id = int(pattern_row_id_row[0])
 
                 image_records = [
-                    item for item in workbook_data.get("search_index", []) if item["rowRef"] is row
+                    item
+                    for item in workbook_data.get("search_index", [])
+                    if item["rowRef"] is row
                 ]
+
                 for idx, image_item in enumerate(image_records):
                     cursor.execute(
                         """
                         INSERT INTO pattern_row_images (
                             pattern_row_id, image_order, image_src, image_hash, compare_png
                         )
-                        VALUES (%s, %s, %s, %s, %s)
+                        VALUES (?, ?, ?, ?, ?)
                         """,
                         (
                             pattern_row_id,
@@ -241,10 +272,10 @@ def save_workbook_to_mysql(workbook_data: dict[str, Any]) -> None:
         conn.close()
 
 
-
-def restore_state_from_mysql() -> None:
+def restore_state_from_sqlserver() -> None:
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
+
     try:
         STATE["imports"] = []
         STATE["search_index"] = []
@@ -258,7 +289,7 @@ def restore_state_from_mysql() -> None:
             ORDER BY id ASC
             """
         )
-        import_rows = cursor.fetchall() or []
+        import_rows = _fetchall_dict(cursor)
         if not import_rows:
             return
 
@@ -269,7 +300,7 @@ def restore_state_from_mysql() -> None:
             ORDER BY import_id ASC, id ASC
             """
         )
-        sheet_rows = cursor.fetchall() or []
+        sheet_rows = _fetchall_dict(cursor)
 
         sheets_by_import: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for sheet in sheet_rows:
@@ -299,7 +330,7 @@ def restore_state_from_mysql() -> None:
             ORDER BY import_id ASC, sheet_id ASC, excel_row ASC, id ASC
             """
         )
-        row_rows = cursor.fetchall() or []
+        row_rows = _fetchall_dict(cursor)
         row_obj_by_id: dict[int, dict[str, Any]] = {}
 
         for db_row in row_rows:
@@ -321,14 +352,18 @@ def restore_state_from_mysql() -> None:
             }
 
             detail_url = row_data.get("__detailUrl")
-            if detail_url and detail_url.startswith("/folder/"):
+            if detail_url and str(detail_url).startswith("/folder/"):
                 row_data["__detailUrl"] = f"{BASE_PATH}{detail_url}"
 
-            merge_extra_data_into_row(row_data, json_loads_safe(db_row.get("extra_json")))
+            merge_extra_data_into_row(
+                row_data,
+                json_loads_safe(db_row.get("extra_json")),
+            )
 
             sheet_obj = sheet_obj_by_id.get(db_row["sheet_id"])
             if not sheet_obj:
                 continue
+
             sheet_obj["rows"].append(row_data)
             row_obj_by_id[db_row["id"]] = row_data
 
@@ -339,7 +374,7 @@ def restore_state_from_mysql() -> None:
             ORDER BY pattern_row_id ASC, image_order ASC, id ASC
             """
         )
-        image_rows = cursor.fetchall() or []
+        image_rows = _fetchall_dict(cursor)
         rebuilt_search_index: list[dict[str, Any]] = []
 
         row_id_to_sheet_name: dict[int, str] = {}
@@ -351,7 +386,8 @@ def restore_state_from_mysql() -> None:
             ORDER BY pr.id ASC
             """
         )
-        for item in cursor.fetchall() or []:
+        join_rows = _fetchall_dict(cursor)
+        for item in join_rows:
             row_id_to_sheet_name[item["pattern_row_id"]] = item["sheet_name"]
 
         for image_row in image_rows:
@@ -360,8 +396,9 @@ def restore_state_from_mysql() -> None:
                 continue
 
             image_src = image_row.get("image_src")
-            if image_src and image_src.startswith("/media/"):
+            if image_src and str(image_src).startswith("/media/"):
                 image_src = f"{BASE_PATH}{image_src}"
+
             if image_src:
                 row_obj["__images"].append(image_src)
 
@@ -400,12 +437,17 @@ def restore_state_from_mysql() -> None:
             for sheet in sheets:
                 header_set = []
                 seen = set()
+
                 for header in known_header_order:
                     real_header = "Sketch Design" if header == "Sketch Design" else header
                     if real_header == "Sketch Design":
                         has_value = any(row.get("__images") for row in sheet["rows"])
                     else:
-                        has_value = any(row.get(real_header) not in (None, "", []) for row in sheet["rows"])
+                        has_value = any(
+                            row.get(real_header) not in (None, "", [])
+                            for row in sheet["rows"]
+                        )
+
                     if has_value and real_header not in seen:
                         seen.add(real_header)
                         header_set.append(real_header)
@@ -427,18 +469,22 @@ def restore_state_from_mysql() -> None:
         for import_item in import_rows:
             all_sheets = sheets_by_import.get(import_item["id"], [])
             partition_info = infer_partition_from_sheets(all_sheets)
+
             workbook_search_index = [
                 item
                 for item in rebuilt_search_index
                 if any(item["rowRef"] is row for sheet in all_sheets for row in sheet["rows"])
             ]
+
             workbook_data = {
                 "id": import_item["id"],
                 "fileName": import_item["file_name"],
                 "sheetCount": import_item["sheet_count"] or len(all_sheets),
                 "totalRows": import_item["total_rows"] or sum(len(sheet["rows"]) for sheet in all_sheets),
                 "imageIndexCount": import_item["image_index_count"] or len(workbook_search_index),
-                "mappedFolderCount": sum(1 for sheet in all_sheets for row in sheet["rows"] if row.get("__folderId")),
+                "mappedFolderCount": sum(
+                    1 for sheet in all_sheets for row in sheet["rows"] if row.get("__folderId")
+                ),
                 "folderImportName": None,
                 "customer": partition_info.get("customer"),
                 "season": partition_info.get("season"),
@@ -448,13 +494,13 @@ def restore_state_from_mysql() -> None:
                 "sheets": all_sheets,
                 "search_index": workbook_search_index,
             }
+
             STATE["imports"].append(workbook_data)
 
         rebuild_global_search_index()
     finally:
         cursor.close()
         conn.close()
-
 
 def search_by_uploaded_image(pasted_image) -> dict[str, Any]:
     if not STATE["search_index"]:

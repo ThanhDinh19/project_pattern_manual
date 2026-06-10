@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import mysql.connector
+import pyodbc
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,14 +24,24 @@ ALLOWED_EXTENSIONS = {"xlsx", "xlsm"}
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
 PDF_EXTENSIONS = {".pdf"}
 
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "127.0.0.1"),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "manual_db"),
-    "charset": os.getenv("DB_CHARSET", "utf8mb4"),
-}
+DB_DRIVER = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT = os.getenv("DB_PORT", "").strip()
+DB_NAME = os.getenv("DB_NAME", "manual_db")
+DB_USER = os.getenv("DB_USER", "sa")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_TRUST_SERVER_CERTIFICATE = os.getenv("DB_TRUST_SERVER_CERTIFICATE", "yes")
 
 
 def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
+    server = DB_HOST if not DB_PORT else f"{DB_HOST},{DB_PORT}"
+
+    conn_str = (
+        f"DRIVER={{{DB_DRIVER}}};"
+        f"SERVER={server};"
+        f"DATABASE={DB_NAME};"
+        f"UID={DB_USER};"
+        f"PWD={DB_PASSWORD};"
+        f"TrustServerCertificate={DB_TRUST_SERVER_CERTIFICATE};"
+    )
+    return pyodbc.connect(conn_str)
